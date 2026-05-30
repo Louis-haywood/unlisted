@@ -6,23 +6,29 @@ require_once __DIR__ . '/core/tenant.php';
 require_once __DIR__ . '/core/auth.php';
 require_once __DIR__ . '/core/functions.php';
 
-// Admin panel lives at /admin (path-based, no subdomain needed)
 $uri_check = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+
+// ── Landing page at root / ────────────────────────────────────────────────────
+if ($uri_check === '') {
+    require __DIR__ . '/pages/landing.php';
+    exit;
+}
+
+// ── Admin panel at /admin/ ────────────────────────────────────────────────────
 if ($uri_check === 'admin' || str_starts_with($uri_check, 'admin/')) {
     require __DIR__ . '/admin/index.php';
     exit;
 }
 
-// Also support subdomain-based admin (admin.louventory.uk) for backwards compat
+// Also support admin.louventory.uk subdomain
 $subdomain = detect_subdomain();
-$host      = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
 if ($subdomain === 'admin') {
     require __DIR__ . '/admin/index.php';
     exit;
 }
 
-// ── Tenant resolution (session-first, subdomain fallback) ─────────────────────
-// Start a generic session to read the stored tenant slug from login
+// ── Tenant resolution ─────────────────────────────────────────────────────────
+// Start a generic session to read workspace stored after login
 if (session_status() === PHP_SESSION_NONE) {
     session_name('lv_app');
     session_start();
@@ -30,33 +36,30 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $tenant = null;
 
-// 1. Try subdomain (still works if someone uses tenant.louventory.uk)
+// 1. Subdomain-based (tenant.louventory.uk) — still supported
 if ($subdomain !== null) {
     $tenant = load_tenant($subdomain);
 }
 
-// 2. Fall back to tenant stored in session after workspace login
+// 2. Workspace stored in session from /login form
 if ($tenant === null && !empty($_SESSION['tenant_slug'])) {
     $tenant = load_tenant($_SESSION['tenant_slug']);
 }
 
-// If we found a tenant, switch to the proper tenant-scoped session
+// Switch to tenant-scoped session once tenant is known
 if ($tenant !== null) {
-    // Re-open with tenant-specific session name so auth works correctly
     $slug = $_SESSION['tenant_slug'] ?? null;
     session_write_close();
     session_name('lv_t' . $tenant['id']);
     session_start();
-    // Carry the tenant_slug forward if it was set in the generic session
     if ($slug && empty($_SESSION['tenant_slug'])) {
         $_SESSION['tenant_slug'] = $slug;
     }
 }
 
-// No tenant resolved — send to login (workspace selector)
+// No tenant and not on the login page → redirect to login
 if ($tenant === null) {
-    $uri_for_login = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
-    if ($uri_for_login !== 'login') {
+    if ($uri_check !== 'login') {
         header('Location: /login');
         exit;
     }
@@ -64,16 +67,10 @@ if ($tenant === null) {
     exit;
 }
 
-// Start tenant-scoped session
-auth_session_start((int)$tenant['id']);
+// ── Tenant routing ────────────────────────────────────────────────────────────
+$uri = $uri_check;
 
-// Parse URI path
-$uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-$uri = trim($uri, '/');
-
-// Route
 switch ($uri) {
-    case '':
     case 'dashboard':
         auth_require((int)$tenant['id']);
         require __DIR__ . '/pages/dashboard.php';
@@ -84,7 +81,6 @@ switch ($uri) {
         break;
 
     case 'logout':
-        auth_session_start((int)$tenant['id']);
         auth_logout();
         break;
 
