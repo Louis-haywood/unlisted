@@ -307,6 +307,6 @@ foreach ($tenants as $t) { if ((int)$t['id'] === $edit_id) { $edit_tenant = $t; 
         </div>
     </div>
 </div>
-<script src="/assets/css/../js/app.js"></script>
+<script src="/assets/js/app.js"></script>
 </body>
 </html>

@@ -157,45 +157,4 @@ function upload_photo(array $file, int $tenant_id, int $item_id): string|false {
     return false;
 }
 
-// ── Items query helper ────────────────────────────────────────────────────────
-
-function items_base_query(int $tenant_id, string $extra_where = '', array $extra_params = []): array {
-    $pdo = get_pdo();
-
-    $where  = 'i.tenant_id = ?';
-    $params = [$tenant_id];
-
-    if ($extra_where) {
-        $where .= ' AND ' . $extra_where;
-        $params = array_merge($params, $extra_params);
-    }
-
-    $sql = "
-        SELECT
-            i.*,
-            c.name   AS category_name,
-            c.colour AS category_colour,
-            COALESCE(la.active_loans,  0) AS active_loans,
-            COALESCE(la.overdue_loans, 0) AS overdue_loans
-        FROM items i
-        LEFT JOIN categories c ON c.id = i.category_id AND c.tenant_id = i.tenant_id
-        LEFT JOIN (
-            SELECT
-                item_id,
-                COUNT(*) AS active_loans,
-                SUM(CASE WHEN due_date IS NOT NULL AND due_date < CURDATE() THEN 1 ELSE 0 END) AS overdue_loans
-            FROM loans
-            WHERE tenant_id = ? AND returned_at IS NULL
-            GROUP BY item_id
-        ) la ON la.item_id = i.id
-        WHERE {$where}
-        ORDER BY i.created_at DESC
-    ";
-
-    // The subquery needs tenant_id too
-    $all_params = array_merge([$tenant_id], $params);
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($all_params);
-    return $stmt->fetchAll();
-}
+// (items queries are built inline per page for clarity and correct param binding)

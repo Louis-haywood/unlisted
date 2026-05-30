@@ -1,4 +1,3 @@
-    </main><!-- /.main-content -->
 </div><!-- /.app-layout -->
 
 <div id="confirm-modal" class="modal-overlay" style="display:none">

@@ -5,10 +5,6 @@ $tid        = (int)$tenant['id'];
 $user       = current_user();
 
 // ── Stat cards ────────────────────────────────────────────────────────────────
-$total_items = (int)$pdo->prepare('SELECT COUNT(*) FROM items WHERE tenant_id = ?')
-    ->execute([$tid]) ? $pdo->query("SELECT COUNT(*) FROM items WHERE tenant_id = $tid")->fetchColumn() : 0;
-
-// Re-do properly with prepared statements
 $s = $pdo->prepare('SELECT COUNT(*) FROM items WHERE tenant_id = ?');
 $s->execute([$tid]);
 $total_items = (int)$s->fetchColumn();

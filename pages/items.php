@@ -4,8 +4,9 @@ $pdo        = get_pdo();
 $tid        = (int)$tenant['id'];
 
 // ── Filters ───────────────────────────────────────────────────────────────────
-$search      = trim($_GET['search']   ?? '');
-$category_id = (int)($_GET['category'] ?? 0);
+$user         = current_user();
+$search       = trim($_GET['search']   ?? '');
+$category_id  = (int)($_GET['category'] ?? 0);
 $current_page = max(1, (int)($_GET['page'] ?? 1));
 $per_page     = 25;
 
