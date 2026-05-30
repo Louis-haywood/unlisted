@@ -1,17 +1,11 @@
 <?php
 
-function auth_session_start(int $tenant_id): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('lv_t' . $tenant_id);
-        session_start();
-    }
-}
+// Session is started by index.php before any page is loaded.
+// These functions simply read/write to whichever session is open.
 
-function auth_admin_session_start(): void {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_name('lv_admin');
-        session_start();
-    }
+function auth_session_start(int $tenant_id): void {
+    // No-op: index.php already started the session.
+    // Kept for backwards compatibility with any page that calls it.
 }
 
 function auth_login(int $tenant_id, string $email, string $password): array|false {
@@ -70,7 +64,14 @@ function current_user(): array {
     ];
 }
 
-// ── Admin auth ───────────────────────────────────────────────────────────────
+// ── Admin auth ────────────────────────────────────────────────────────────────
+
+function auth_admin_session_start(): void {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_name('lv_admin');
+        session_start();
+    }
+}
 
 function admin_login(string $email, string $password): bool {
     if ($email === ADMIN_EMAIL && password_verify($password, ADMIN_PASSWORD)) {
@@ -88,7 +89,7 @@ function admin_check(): bool {
 
 function admin_require(): void {
     if (!admin_check()) {
-        header('Location: /login');
+        header('Location: /admin/');
         exit;
     }
 }
@@ -96,6 +97,6 @@ function admin_require(): void {
 function admin_logout(): void {
     $_SESSION = [];
     session_destroy();
-    header('Location: /login');
+    header('Location: /admin/');
     exit;
 }
