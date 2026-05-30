@@ -1,4 +1,5 @@
 <?php
+/** @var array $tenant */
 // POST-only handler — processes a loan return and redirects back to /loans
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('/loans');

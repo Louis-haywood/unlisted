@@ -1,4 +1,5 @@
 <?php
+/** @var array $tenant */
 // Redirect if already logged in
 if (auth_check((int)$tenant['id'])) {
     redirect('/dashboard');

@@ -1,4 +1,5 @@
 <?php
+/** @var array $tenant */
 $page_title   = 'Loan History';
 $pdo          = get_pdo();
 $tid          = (int)$tenant['id'];
