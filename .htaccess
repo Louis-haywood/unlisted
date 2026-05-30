@@ -1,5 +1,6 @@
 Options -Indexes
 RewriteEngine On
+RewriteBase /
 
 # Serve real files and directories directly (including uploads)
 RewriteCond %{REQUEST_FILENAME} -f [OR]

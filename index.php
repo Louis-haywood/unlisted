@@ -9,8 +9,11 @@ require_once __DIR__ . '/core/functions.php';
 // Detect subdomain
 $subdomain = detect_subdomain();
 
-// Admin panel
-if ($subdomain === 'admin') {
+// Admin panel: accessed via admin.louventory.uk OR the root domain louventory.uk itself
+$host = preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? '');
+$is_root_domain = ($host === APP_DOMAIN || $host === 'www.' . APP_DOMAIN);
+
+if ($subdomain === 'admin' || $is_root_domain) {
     require __DIR__ . '/admin/index.php';
     exit;
 }
