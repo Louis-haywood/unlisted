@@ -1,5 +1,5 @@
 <?php
-// Admin panel entry point — reached when subdomain === 'admin'
+// Admin panel — accessible at louventory.uk/admin/
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../core/tenant.php';
 require_once __DIR__ . '/../core/auth.php';
@@ -7,16 +7,10 @@ require_once __DIR__ . '/../core/functions.php';
 
 auth_admin_session_start();
 
-// If accessed directly at /admin or /admin/*, permanently redirect to the
-// root URL so all internal links stay consistent at louventory.uk/
 $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-if (str_starts_with($current_path, '/admin')) {
-    $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
-    header('Location: /' . $qs, true, 302);
-    exit;
-}
 
-$uri = trim($current_path, '/');
+// Strip /admin prefix to get the sub-path (e.g. /admin/logout → logout)
+$uri = trim(preg_replace('#^/admin/?#', '', $current_path), '/');
 
 // Logout
 if ($uri === 'logout') {
@@ -27,7 +21,6 @@ if ($uri === 'logout') {
 if (!admin_check()) {
     $error = '';
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Basic CSRF for admin login
         $token = $_POST['csrf_token'] ?? '';
         if (empty($_SESSION['admin_csrf'])) $_SESSION['admin_csrf'] = bin2hex(random_bytes(32));
         if (!hash_equals($_SESSION['admin_csrf'], $token)) {
@@ -37,7 +30,7 @@ if (!admin_check()) {
             $password = trim($_POST['password'] ?? '');
             if (admin_login($email, $password)) {
                 unset($_SESSION['admin_csrf']);
-                header('Location: /');
+                header('Location: /admin/');
                 exit;
             } else {
                 $error = 'Invalid credentials.';
@@ -61,7 +54,7 @@ if (!admin_check()) {
         <?php if ($error): ?>
             <div class="alert alert-error"><?= h($error) ?></div>
         <?php endif; ?>
-        <form method="POST" class="auth-form">
+        <form method="POST" action="/admin/" class="auth-form">
             <input type="hidden" name="csrf_token" value="<?= h($_SESSION['admin_csrf']) ?>">
             <div class="form-group">
                 <label class="form-label" for="email">Email</label>
@@ -81,5 +74,5 @@ if (!admin_check()) {
     exit;
 }
 
-// Route admin pages
+// Dashboard
 require __DIR__ . '/dashboard.php';
