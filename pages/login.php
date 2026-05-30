@@ -1,28 +1,23 @@
 <?php
 /** @var array|null $tenant */
 
-// If tenant is already resolved (subdomain mode), check if already logged in
+// Already logged into this tenant? Go straight to dashboard.
 if (isset($tenant) && auth_check((int)$tenant['id'])) {
     redirect('/dashboard');
 }
 
-// If no tenant yet, this is the workspace+login page
-$no_tenant = !isset($tenant) || $tenant === null;
-
-$error  = '';
-$slug   = trim($_POST['workspace'] ?? $_GET['workspace'] ?? '');
+$no_tenant = ($tenant === null);
+$error     = '';
+$slug      = trim($_GET['workspace'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // CSRF — use the generic session token for the no-tenant login flow
-    $token = $_POST['csrf_token'] ?? '';
-    if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    if (!hash_equals($_SESSION['csrf_token'], $token)) {
+    if (!csrf_verify()) {
         $error = 'Invalid form submission. Please try again.';
     } else {
         $email    = trim($_POST['email']    ?? '');
         $password = trim($_POST['password'] ?? '');
 
-        // Resolve tenant from POST workspace field if not already known
+        // Resolve tenant from the workspace field when not known from subdomain
         if ($no_tenant) {
             $slug = strtolower(trim($_POST['workspace'] ?? ''));
             if ($slug === '') {
@@ -30,40 +25,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $tenant = load_tenant($slug);
                 if (!$tenant) {
-                    $error = 'Workspace "' . htmlspecialchars($slug, ENT_QUOTES) . '" not found.';
+                    $error = 'Workspace "' . h($slug) . '" not found.';
                 }
             }
         }
 
         if (!$error && $tenant) {
-            // Switch to tenant session
-            session_write_close();
-            session_name('lv_t' . $tenant['id']);
-            session_start();
-
             $user = auth_login((int)$tenant['id'], $email, $password);
             if ($user) {
-                // Remember the workspace slug so future requests can resolve tenant
+                // Store workspace slug so index.php can resolve tenant on every request
                 $_SESSION['tenant_slug'] = $tenant['subdomain'];
                 redirect('/dashboard');
             } else {
                 $error = 'Invalid email address or password.';
-                // Drop back to generic session so the form re-renders
-                session_write_close();
-                session_name('lv_app');
-                session_start();
             }
         }
     }
-} else {
-    // Ensure CSRF token exists in current session
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
 }
-
-$csrf = $_SESSION['csrf_token'];
-$tenant_name = $tenant['name'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -80,18 +58,16 @@ $tenant_name = $tenant['name'] ?? null;
             <span class="brand-lou">Lou</span><span class="brand-ventory">Ventory</span>
         </div>
 
-        <?php if ($tenant_name): ?>
-            <div class="auth-tenant"><?= htmlspecialchars($tenant_name, ENT_QUOTES) ?></div>
-        <?php else: ?>
-            <div class="auth-tenant">Sign in to your workspace</div>
-        <?php endif; ?>
+        <div class="auth-tenant">
+            <?= $tenant ? h($tenant['name']) : 'Sign in to your workspace' ?>
+        </div>
 
         <?php if ($error): ?>
-            <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES) ?></div>
+            <div class="alert alert-error"><?= h($error) ?></div>
         <?php endif; ?>
 
         <form method="POST" action="/login" class="auth-form">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES) ?>">
+            <?= csrf_field() ?>
 
             <?php if ($no_tenant): ?>
             <div class="form-group">
@@ -103,7 +79,7 @@ $tenant_name = $tenant['name'] ?? null;
                         name="workspace"
                         class="form-input"
                         placeholder="yourworkspace"
-                        value="<?= htmlspecialchars($slug, ENT_QUOTES) ?>"
+                        value="<?= h($slug) ?>"
                         required
                         autofocus
                         autocomplete="off"
@@ -111,7 +87,7 @@ $tenant_name = $tenant['name'] ?? null;
                     >
                     <span class="input-addon">.louventory.uk</span>
                 </div>
-                <span class="form-hint">Enter the workspace name given to you by your administrator.</span>
+                <span class="form-hint">Your workspace name — given to you by your administrator.</span>
             </div>
             <?php endif; ?>
 
@@ -123,11 +99,12 @@ $tenant_name = $tenant['name'] ?? null;
                     name="email"
                     class="form-input"
                     placeholder="you@example.com"
-                    value="<?= htmlspecialchars($_POST['email'] ?? '', ENT_QUOTES) ?>"
+                    value="<?= h($_POST['email'] ?? '') ?>"
                     required
                     <?= $no_tenant ? '' : 'autofocus' ?>
                 >
             </div>
+
             <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <input
@@ -139,7 +116,12 @@ $tenant_name = $tenant['name'] ?? null;
                     required
                 >
             </div>
+
             <button type="submit" class="btn btn-primary btn-full">Sign in</button>
+
+            <div style="text-align:center; margin-top:1rem">
+                <a href="/" style="font-size:0.8rem; color:#6B7280">← Back to home</a>
+            </div>
         </form>
     </div>
 </div>
