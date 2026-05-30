@@ -1,16 +1,15 @@
 <?php
-// Database credentials — fill these in before deploying
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'louventory');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
+define('DB_NAME', 'u463907152_louventory');
+define('DB_USER', 'u463907152_louventory');
+define('DB_PASS', 'g@kyqH^X5B5=');
 
-// Admin panel credentials
-// Generate ADMIN_PASSWORD with: echo password_hash('your_password', PASSWORD_BCRYPT);
+// Admin panel credentials — change ADMIN_PASSWORD before going live.
+// Generate a new hash: php -r "echo password_hash('yourpassword', PASSWORD_BCRYPT);"
 define('ADMIN_EMAIL',    'admin@louventory.uk');
-define('ADMIN_PASSWORD', '$2y$12$CHANGE_ME_RUN_PASSWORD_HASH_TO_GENERATE');
+define('ADMIN_PASSWORD', '$2y$12$REPLACE_THIS_RUN_PASSWORD_HASH_COMMAND_ABOVE');
 
-// Cron job secret — change this to a random string
+// Cron job secret — change this to a long random string
 define('CRON_TOKEN', 'change_me_to_a_long_random_secret');
 
 // Application
