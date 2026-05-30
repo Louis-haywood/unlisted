@@ -306,6 +306,46 @@
         }
         footer .foot-logo { font-size: 1.1rem; font-weight: 800; }
         footer p { font-size: 0.75rem; color: var(--text-m); }
+
+        /* ── RESPONSIVE ──────────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .container { padding: 0 1.25rem; }
+
+            .hero { padding: 4rem 0 2.5rem; }
+            .hero-sub { font-size: 1rem; }
+
+            /* hide mock sidebar to save space */
+            .mock-sidebar { display: none; }
+            .mock-stats { grid-template-columns: 1fr 1fr; }
+            .mock-wrap { padding: 3rem 0 0; }
+
+            .features-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+            .steps { grid-template-columns: 1fr; gap: 2rem; }
+            .steps::before { display: none; }
+            .for-grid { grid-template-columns: 1fr 1fr; }
+
+            .section { padding: 3.5rem 0; }
+            .how-section { padding: 3.5rem 0; }
+
+            .cta-box { padding: 3rem 1.5rem; }
+
+            .proof-bar { gap: 1rem; padding-left: 1.25rem; padding-right: 1.25rem; }
+        }
+
+        @media (max-width: 480px) {
+            .hero { padding: 3rem 0 2rem; }
+            .hero-actions { flex-direction: column; align-items: stretch; }
+            .btn-hero-primary, .btn-hero-ghost { text-align: center; }
+
+            .features-grid { grid-template-columns: 1fr; }
+            .for-grid { grid-template-columns: 1fr; }
+
+            .proof-bar { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+
+            .cta-box { padding: 2.5rem 1.25rem; }
+
+            footer { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
