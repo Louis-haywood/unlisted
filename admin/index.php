@@ -7,7 +7,16 @@ require_once __DIR__ . '/../core/functions.php';
 
 auth_admin_session_start();
 
-$uri = trim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH), '/');
+// If accessed directly at /admin or /admin/*, permanently redirect to the
+// root URL so all internal links stay consistent at louventory.uk/
+$current_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+if (str_starts_with($current_path, '/admin')) {
+    $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
+    header('Location: /' . $qs, true, 302);
+    exit;
+}
+
+$uri = trim($current_path, '/');
 
 // Logout
 if ($uri === 'logout') {
