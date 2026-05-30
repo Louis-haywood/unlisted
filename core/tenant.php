@@ -33,6 +33,14 @@ function load_tenant(string $subdomain): ?array {
     return $row ?: null;
 }
 
+function load_tenant_by_id(int $id): ?array {
+    $pdo  = get_pdo();
+    $stmt = $pdo->prepare('SELECT * FROM tenants WHERE id = ? AND active = 1 LIMIT 1');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
 function load_tenant_by_custom_domain(string $host): ?array {
     $pdo  = get_pdo();
     $stmt = $pdo->prepare('SELECT * FROM tenants WHERE custom_domain = ? AND active = 1 LIMIT 1');
