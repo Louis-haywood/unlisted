@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($_SESSION['admin_csrf'])) $_SESSION['admin_csrf'] = bin2hex(random_bytes(32));
     $token = $_POST['csrf_token'] ?? '';
     if (!hash_equals($_SESSION['admin_csrf'], $token)) {
-        flash_set('error', 'Invalid token.'); redirect('/');
+        flash_set('error', 'Invalid token.'); redirect('/admin/');
     }
 
     $action = $_POST['action'] ?? '';
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             flash_set('error', implode(' ', $errs));
         }
-        redirect('/');
+        redirect('/admin/');
     }
 
     if ($action === 'toggle_tenant') {
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $s = $pdo->prepare('UPDATE tenants SET active = NOT active WHERE id = ?');
         $s->execute([$tid]);
         flash_set('success', 'Tenant status toggled.');
-        redirect('/');
+        redirect('/admin/');
     }
 
     if ($action === 'update_tenant') {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $limit   = max(1, (int)($_POST['t_item_limit'] ?? 100));
         $pdo->prepare('UPDATE tenants SET plan = ?, item_limit = ? WHERE id = ?')->execute([$plan, $limit, $tid]);
         flash_set('success', 'Tenant updated.');
-        redirect('/');
+        redirect('/admin/');
     }
 }
 
@@ -115,7 +115,7 @@ foreach ($tenants as $t) { if ((int)$t['id'] === $edit_id) { $edit_tenant = $t; 
         </div>
         <div class="sidebar-tenant">Superadmin</div>
         <nav class="sidebar-nav">
-            <a href="/" class="nav-item active">
+            <a href="/admin/" class="nav-item active">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 Tenants
             </a>
@@ -128,7 +128,7 @@ foreach ($tenants as $t) { if ((int)$t['id'] === $edit_id) { $edit_tenant = $t; 
                     <span class="user-role">Superadmin</span>
                 </div>
             </div>
-            <a href="/logout" class="logout-link" title="Log out">
+            <a href="/admin/logout" class="logout-link" title="Log out">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </a>
         </div>
@@ -193,7 +193,7 @@ foreach ($tenants as $t) { if ((int)$t['id'] === $edit_id) { $edit_tenant = $t; 
                             </td>
                             <td>
                                 <div class="action-btns">
-                                    <a href="/?edit=<?= (int)$t['id'] ?>" class="btn btn-xs btn-secondary">Edit</a>
+                                    <a href="/admin/?edit=<?= (int)$t['id'] ?>" class="btn btn-xs btn-secondary">Edit</a>
                                     <form method="POST" style="display:inline">
                                         <input type="hidden" name="csrf_token"  value="<?= h($admin_csrf) ?>">
                                         <input type="hidden" name="action"      value="toggle_tenant">
@@ -218,7 +218,7 @@ foreach ($tenants as $t) { if ((int)$t['id'] === $edit_id) { $edit_tenant = $t; 
                 <div class="card form-card">
                     <div class="card-header">
                         <h2 class="card-title">Edit Tenant: <?= h($edit_tenant['name']) ?></h2>
-                        <a href="/" class="card-link">Cancel</a>
+                        <a href="/admin/" class="card-link">Cancel</a>
                     </div>
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="<?= h($admin_csrf) ?>">
