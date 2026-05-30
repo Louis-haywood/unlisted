@@ -1,3 +1,4 @@
+<div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 </div><!-- /.app-layout -->
 
 <div id="confirm-modal" class="modal-overlay" style="display:none">

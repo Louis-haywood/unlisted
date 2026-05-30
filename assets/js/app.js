@@ -127,4 +127,23 @@
         }, 6000);
     });
 
+    // ── Mobile nav toggle ────────────────────────────────────────────────────
+    var navToggle   = document.getElementById('nav-toggle');
+    var navClose    = document.getElementById('nav-close');
+    var navBackdrop = document.getElementById('sidebar-backdrop');
+
+    function openNav()  { document.body.classList.add('nav-open'); }
+    function closeNav() { document.body.classList.remove('nav-open'); }
+
+    if (navToggle)   navToggle.addEventListener('click', openNav);
+    if (navClose)    navClose.addEventListener('click', closeNav);
+    if (navBackdrop) navBackdrop.addEventListener('click', closeNav);
+
+    // Close nav when a sidebar link is tapped on mobile
+    document.querySelectorAll('.sidebar .nav-item').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 768) closeNav();
+        });
+    });
+
 })();
