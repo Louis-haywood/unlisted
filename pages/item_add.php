@@ -5,16 +5,6 @@ $pdo        = get_pdo();
 $tid        = (int)$tenant['id'];
 $user       = current_user();
 
-// Check item limit
-$s = $pdo->prepare('SELECT COUNT(*) FROM items WHERE tenant_id = ?');
-$s->execute([$tid]);
-$item_count = (int)$s->fetchColumn();
-
-if ($item_count >= (int)$tenant['item_limit']) {
-    flash_set('error', 'Item limit reached (' . $tenant['item_limit'] . '). Upgrade your plan to add more.');
-    redirect('/items');
-}
-
 // Categories
 $s = $pdo->prepare('SELECT * FROM categories WHERE tenant_id = ? ORDER BY name');
 $s->execute([$tid]);
