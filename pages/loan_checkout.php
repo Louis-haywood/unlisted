@@ -11,6 +11,20 @@ if (!isset($_SESSION['checkout'])) $_SESSION['checkout'] = [];
 $step   = (int)($_POST['step'] ?? ($_GET['step'] ?? 1));
 $errors = [];
 
+// ── AJAX — Barcode lookup for express checkout ────────────────────────────────
+if (($_GET['action'] ?? '') === 'barcode_lookup') {
+    header('Content-Type: application/json');
+    $barcode = trim($_GET['barcode'] ?? '');
+    if ($barcode === '') { echo json_encode(['error' => 'No barcode provided']); exit; }
+    $s = $pdo->prepare('SELECT id, name, quantity, barcode FROM items WHERE tenant_id = ? AND barcode = ? LIMIT 1');
+    $s->execute([$tid, $barcode]);
+    $row = $s->fetch();
+    if (!$row) { echo json_encode(['error' => 'Item not found for barcode: ' . $barcode]); exit; }
+    if ((int)$row['quantity'] <= 0) { echo json_encode(['error' => 'No stock available for "' . $row['name'] . '"']); exit; }
+    echo json_encode(['id' => (int)$row['id'], 'name' => $row['name'], 'quantity' => (int)$row['quantity']]);
+    exit;
+}
+
 // ── STEP 1 — Item search ──────────────────────────────────────────────────────
 if ($step === 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) { $errors[] = 'Invalid token.'; $step = 1; }
@@ -233,26 +247,49 @@ require __DIR__ . '/../templates/sidebar.php';
     <div class="card form-card" style="max-width:640px; margin:0 auto">
 
     <?php if ($step === 1): ?>
-        <!-- Step 1: Item search -->
-        <h2 class="card-section-title">Find an Item</h2>
+        <!-- Express Check Out -->
+        <div style="margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border)">
+            <h2 class="card-section-title" style="margin-bottom:0.25rem">Express Check Out</h2>
+            <p class="text-muted" style="margin-bottom:1rem; font-size:0.875rem">Scan the item's barcode to find it instantly.</p>
+            <button type="button" class="btn btn-primary" id="express-scan-btn" style="width:100%; padding:0.875rem; font-size:1rem">
+                📷 Scan Barcode
+            </button>
+            <div id="express-result" style="display:none; margin-top:1rem; padding:1rem; background:var(--bg-subtle,#f9fafb); border-radius:8px; border:1px solid var(--border)">
+                <div style="display:flex; align-items:center; justify-content:space-between">
+                    <div>
+                        <div style="font-weight:600" id="express-item-name"></div>
+                        <div class="text-muted" style="font-size:0.85rem" id="express-item-stock"></div>
+                    </div>
+                    <button type="button" class="btn btn-ghost" id="express-rescan" style="font-size:0.8rem">Rescan</button>
+                </div>
+            </div>
+            <div id="express-error" style="display:none; margin-top:0.75rem; color:#dc2626; font-size:0.875rem"></div>
+            <!-- Hidden form submitted after a successful scan -->
+            <form method="POST" action="/loans/checkout" id="express-form" style="display:none">
+                <?= csrf_field() ?>
+                <input type="hidden" name="step" value="1">
+                <input type="hidden" name="item_id" id="express-item-id">
+            </form>
+        </div>
+
+        <!-- Manual search -->
+        <h2 class="card-section-title">Or Search Manually</h2>
         <form method="POST" action="/loans/checkout">
             <?= csrf_field() ?>
             <input type="hidden" name="step" value="1">
             <div class="form-group">
-                <label class="form-label" for="item-search-input">Search by name or scan barcode</label>
+                <label class="form-label" for="item-search-input">Search by name or barcode</label>
                 <input
                     type="text"
                     id="item-search-input"
                     name="item_search"
                     class="form-input"
                     placeholder="Item name or barcode…"
-                    autofocus
                     autocomplete="off"
                 >
-                <span class="form-hint">Barcode scanners are supported — scan and it will submit automatically.</span>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Find Item →</button>
+                <button type="submit" class="btn btn-secondary">Find Item →</button>
             </div>
         </form>
 
@@ -421,7 +458,84 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </main>
 
+<!-- Barcode scanner modal -->
+<div id="express-scanner-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box" style="max-width:380px; width:100%">
+        <h3 class="modal-title">Scan Item Barcode</h3>
+        <video id="express-scanner-video" style="width:100%; border-radius:8px; background:#000; display:block"></video>
+        <p id="express-scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at item barcode...</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="express-scanner-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/@zxing/browser@0.1.4/umd/index.min.js"></script>
 <script>
+// Express checkout scanner
+(function() {
+    var scanBtn    = document.getElementById('express-scan-btn');
+    var rescanBtn  = document.getElementById('express-rescan');
+    var cancelBtn  = document.getElementById('express-scanner-cancel');
+    var modal      = document.getElementById('express-scanner-modal');
+    var statusEl   = document.getElementById('express-scanner-status');
+    var resultBox  = document.getElementById('express-result');
+    var errorBox   = document.getElementById('express-error');
+    var itemName   = document.getElementById('express-item-name');
+    var itemStock  = document.getElementById('express-item-stock');
+    var itemIdIn   = document.getElementById('express-item-id');
+    var form       = document.getElementById('express-form');
+    if (!scanBtn) return;
+
+    var codeReader = null;
+
+    function closeScanner() {
+        if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
+        modal.style.display = 'none';
+        statusEl.textContent = 'Point camera at item barcode...';
+    }
+
+    function openScanner() {
+        errorBox.style.display = 'none';
+        resultBox.style.display = 'none';
+        modal.style.display = 'flex';
+        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+        codeReader.decodeFromVideoDevice(null, 'express-scanner-video', function(result, err) {
+            if (!result) return;
+            var barcode = result.getText();
+            closeScanner();
+            statusEl.textContent = 'Point camera at item barcode...';
+
+            // Look up item by barcode
+            fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        errorBox.textContent = data.error;
+                        errorBox.style.display = 'block';
+                        return;
+                    }
+                    itemIdIn.value = data.id;
+                    itemName.textContent = data.name;
+                    itemStock.textContent = data.quantity + ' in stock';
+                    resultBox.style.display = 'block';
+                    // Short delay so user sees the item before proceeding
+                    setTimeout(function() { form.submit(); }, 800);
+                })
+                .catch(function() {
+                    errorBox.textContent = 'Network error — please try again.';
+                    errorBox.style.display = 'block';
+                });
+        }).catch(function() {
+            statusEl.textContent = 'Could not access camera. Check permissions.';
+        });
+    }
+
+    scanBtn.addEventListener('click', openScanner);
+    if (rescanBtn) rescanBtn.addEventListener('click', openScanner);
+    cancelBtn.addEventListener('click', closeScanner);
+})();
+
 // Barcode scanner detection on step 1 search field
 (function() {
     var input = document.getElementById('item-search-input');

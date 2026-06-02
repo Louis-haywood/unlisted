@@ -208,7 +208,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Barcode</h3>
-        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block"></video>
+        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
         <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at barcode...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="scanner-cancel">Cancel</button>
