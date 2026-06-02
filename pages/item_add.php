@@ -233,19 +233,33 @@ require __DIR__ . '/../templates/sidebar.php';
     }
 
     scanBtn.addEventListener('click', function() {
-        scanModal.style.display = 'flex';
-        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
-        codeReader.decodeFromVideoDevice(null, 'scanner-video', function(result, err) {
-            if (result) {
-                document.getElementById('barcode').value = result.getText();
-                closeScanner();
-            }
-            if (err && !(err instanceof ZXingBrowser.NotFoundException)) {
-                statusEl.textContent = 'Camera error: ' + err.message;
-            }
-        }).catch(function(e) {
-            statusEl.textContent = 'Could not access camera. Check permissions.';
-        });
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert('Camera not supported in this browser, or the page must be loaded over HTTPS.');
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                stream.getTracks().forEach(function(t) { t.stop(); });
+                scanModal.style.display = 'flex';
+                codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+                codeReader.decodeFromVideoDevice(null, 'scanner-video', function(result, err) {
+                    if (result) {
+                        document.getElementById('barcode').value = result.getText();
+                        closeScanner();
+                    }
+                }).catch(function(e) {
+                    statusEl.textContent = 'Camera error: ' + e.message;
+                });
+            })
+            .catch(function(e) {
+                if (e.name === 'NotAllowedError') {
+                    alert('Camera permission denied. Please allow camera access in your browser settings and try again.');
+                } else if (e.name === 'NotFoundError') {
+                    alert('No camera found on this device.');
+                } else {
+                    alert('Could not access camera: ' + e.message);
+                }
+            });
     });
 
     cancelBtn.addEventListener('click', closeScanner);
