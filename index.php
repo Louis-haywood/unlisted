@@ -45,6 +45,11 @@ if ($tenant === null && !empty($_SESSION['tenant_slug'])) {
     $tenant = load_tenant($_SESSION['tenant_slug']);
 }
 
+// 3. Single-tenant fallback — load the only active tenant
+if ($tenant === null) {
+    $tenant = get_pdo()->query('SELECT * FROM tenants WHERE active = 1 LIMIT 1')->fetch() ?: null;
+}
+
 // No tenant + not on login → redirect to login
 if ($tenant === null && $uri_check !== 'login') {
     header('Location: /login');
