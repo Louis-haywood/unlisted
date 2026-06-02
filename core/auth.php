@@ -28,6 +28,24 @@ function auth_login(int $tenant_id, string $email, string $password): array|fals
     return false;
 }
 
+function auth_login_password_only(int $tenant_id, string $password): array|false {
+    $pdo  = get_pdo();
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE tenant_id = ?');
+    $stmt->execute([$tenant_id]);
+    while ($user = $stmt->fetch()) {
+        if (password_verify($password, $user['password'])) {
+            session_regenerate_id(true);
+            $_SESSION['user_id']    = (int)$user['id'];
+            $_SESSION['user_name']  = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_role']  = $user['role'];
+            $_SESSION['tenant_id']  = $tenant_id;
+            return $user;
+        }
+    }
+    return false;
+}
+
 function auth_check(int $tenant_id): bool {
     return isset($_SESSION['user_id'])
         && isset($_SESSION['tenant_id'])

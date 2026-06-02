@@ -11,11 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) {
         $error = 'Invalid form submission. Please try again.';
     } else {
-        $email    = trim($_POST['email']    ?? '');
         $password = trim($_POST['password'] ?? '');
 
         if ($tenant) {
-            $user = auth_login((int)$tenant['id'], $email, $password);
+            $user = auth_login_password_only((int)$tenant['id'], $password);
             if ($user) {
                 $_SESSION['tenant_slug'] = $tenant['subdomain'];
                 redirect('/dashboard');
@@ -51,20 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?= csrf_field() ?>
 
             <div class="form-group">
-                <label class="form-label" for="email">Email address</label>
-                <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    class="form-input"
-                    placeholder="you@example.com"
-                    value="<?= h($_POST['email'] ?? '') ?>"
-                    required
-                    autofocus
-                >
-            </div>
-
-            <div class="form-group">
                 <label class="form-label" for="password">Password</label>
                 <input
                     type="password"
@@ -73,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     class="form-input"
                     placeholder="••••••••"
                     required
+                    autofocus
                 >
             </div>
 
