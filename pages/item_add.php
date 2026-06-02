@@ -208,7 +208,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Barcode</h3>
-        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
+        <div id="scanner-reader" style="width:100%; border-radius:8px; overflow:hidden"></div>
         <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at barcode...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="scanner-cancel">Cancel</button>
@@ -216,50 +216,43 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </div>
 
-<script src="https://unpkg.com/@zxing/browser@0.1.4/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 // Barcode scanner
 (function() {
-    var scanBtn     = document.getElementById('scan-barcode');
-    var scanModal   = document.getElementById('scanner-modal');
-    var cancelBtn   = document.getElementById('scanner-cancel');
-    var statusEl    = document.getElementById('scanner-status');
-    var codeReader  = null;
+    var scanBtn    = document.getElementById('scan-barcode');
+    var scanModal  = document.getElementById('scanner-modal');
+    var cancelBtn  = document.getElementById('scanner-cancel');
+    var statusEl   = document.getElementById('scanner-status');
+    var scanner    = null;
 
     function closeScanner() {
-        if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
+        if (scanner) {
+            scanner.stop().catch(function() {}).then(function() {
+                scanner.clear();
+                scanner = null;
+            });
+        }
         scanModal.style.display = 'none';
         statusEl.textContent = 'Point camera at barcode...';
     }
 
     scanBtn.addEventListener('click', function() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert('Camera not supported in this browser, or the page must be loaded over HTTPS.');
-            return;
-        }
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(function(stream) {
-                stream.getTracks().forEach(function(t) { t.stop(); });
-                scanModal.style.display = 'flex';
-                codeReader = new ZXingBrowser.BrowserMultiFormatReader();
-                codeReader.decodeFromVideoDevice(null, 'scanner-video', function(result, err) {
-                    if (result) {
-                        document.getElementById('barcode').value = result.getText();
-                        closeScanner();
-                    }
-                }).catch(function(e) {
-                    statusEl.textContent = 'Camera error: ' + e.message;
-                });
-            })
-            .catch(function(e) {
-                if (e.name === 'NotAllowedError') {
-                    alert('Camera permission denied. Please allow camera access in your browser settings and try again.');
-                } else if (e.name === 'NotFoundError') {
-                    alert('No camera found on this device.');
-                } else {
-                    alert('Could not access camera: ' + e.message);
-                }
-            });
+        scanModal.style.display = 'flex';
+        scanner = new Html5Qrcode('scanner-reader');
+        scanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 280, height: 120 } },
+            function(barcode) {
+                document.getElementById('barcode').value = barcode;
+                closeScanner();
+            },
+            function() {}
+        ).catch(function(e) {
+            statusEl.textContent = e.toString().includes('NotAllowed')
+                ? 'Camera permission denied — allow it in browser settings.'
+                : 'Camera error: ' + e;
+        });
     });
 
     cancelBtn.addEventListener('click', closeScanner);
