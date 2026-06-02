@@ -1,5 +1,5 @@
 -- LouVentory Database Schema
--- Import this file via phpMyAdmin or MySQL CLI before first use.
+-- Import via phpMyAdmin or: mysql -u root -p louventory < schema.sql
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -8,14 +8,11 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Table: tenants
 -- --------------------------------------------------------
 CREATE TABLE `tenants` (
-  `id`            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
-  `name`          VARCHAR(255)    NOT NULL,
-  `subdomain`     VARCHAR(100)    NOT NULL,
-  `custom_domain` VARCHAR(255)    NULL DEFAULT NULL,
-  `plan`          ENUM('free','pro') NOT NULL DEFAULT 'free',
-  `item_limit`    INT             NOT NULL DEFAULT 100,
-  `active`        TINYINT(1)      NOT NULL DEFAULT 1,
-  `created_at`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name`       VARCHAR(255) NOT NULL,
+  `subdomain`  VARCHAR(100) NOT NULL DEFAULT 'default',
+  `active`     TINYINT(1)   NOT NULL DEFAULT 1,
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_subdomain` (`subdomain`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -27,12 +24,11 @@ CREATE TABLE `users` (
   `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `tenant_id`  INT UNSIGNED NOT NULL,
   `name`       VARCHAR(255) NOT NULL,
-  `email`      VARCHAR(255) NOT NULL,
+  `email`      VARCHAR(255) NOT NULL DEFAULT '',
   `password`   VARCHAR(255) NOT NULL,
-  `role`       ENUM('admin','staff') NOT NULL DEFAULT 'staff',
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `role`       ENUM('admin','staff') NOT NULL DEFAULT 'admin',
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_email` (`email`),
   INDEX `idx_tenant_id` (`tenant_id`),
   CONSTRAINT `fk_users_tenant`
     FOREIGN KEY (`tenant_id`) REFERENCES `tenants` (`id`) ON DELETE CASCADE
@@ -57,18 +53,18 @@ CREATE TABLE `categories` (
 -- Table: items
 -- --------------------------------------------------------
 CREATE TABLE `items` (
-  `id`                  INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-  `tenant_id`           INT UNSIGNED  NOT NULL,
-  `category_id`         INT UNSIGNED  NULL DEFAULT NULL,
-  `name`                VARCHAR(255)  NOT NULL,
-  `description`         TEXT          NULL,
-  `quantity`            INT           NOT NULL DEFAULT 0,
-  `low_stock_threshold` INT           NOT NULL DEFAULT 5,
-  `serial_number`       VARCHAR(255)  NULL DEFAULT NULL,
-  `barcode`             VARCHAR(255)  NULL DEFAULT NULL,
-  `photo_path`          VARCHAR(500)  NULL DEFAULT NULL,
-  `created_at`          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`          DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `id`                  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id`           INT UNSIGNED NOT NULL,
+  `category_id`         INT UNSIGNED NULL DEFAULT NULL,
+  `name`                VARCHAR(255) NOT NULL,
+  `description`         TEXT         NULL,
+  `quantity`            INT          NOT NULL DEFAULT 0,
+  `low_stock_threshold` INT          NOT NULL DEFAULT 5,
+  `serial_number`       VARCHAR(255) NULL DEFAULT NULL,
+  `barcode`             VARCHAR(255) NULL DEFAULT NULL,
+  `photo_path`          VARCHAR(500) NULL DEFAULT NULL,
+  `created_at`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`          DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `idx_tenant_id` (`tenant_id`),
   INDEX `idx_category_id` (`category_id`),
@@ -143,3 +139,13 @@ CREATE TABLE `activity_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- --------------------------------------------------------
+-- Seed: default tenant + admin user
+-- Password: changeme  (bcrypt — change this before use)
+-- To generate a new hash: php -r "echo password_hash('yourpassword', PASSWORD_DEFAULT);"
+-- --------------------------------------------------------
+INSERT INTO `tenants` (`name`, `subdomain`) VALUES ('LouVentory', 'default');
+
+INSERT INTO `users` (`tenant_id`, `name`, `email`, `password`, `role`)
+VALUES (1, 'Admin', '', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
