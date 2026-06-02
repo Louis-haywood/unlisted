@@ -157,6 +157,7 @@ require __DIR__ . '/../templates/sidebar.php';
                     <label class="form-label" for="barcode">Barcode</label>
                     <div class="input-with-btn">
                         <input type="text" id="barcode" name="barcode" class="form-input barcode-font" value="<?= h($values['barcode']) ?>" placeholder="e.g. LV-A1B2C3D4E5">
+                        <button type="button" class="btn btn-secondary" id="scan-barcode">Scan</button>
                         <button type="button" class="btn btn-secondary" id="gen-barcode">Generate</button>
                     </div>
                 </div>
@@ -203,7 +204,53 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </div>
 
+<!-- Barcode scanner modal -->
+<div id="scanner-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box" style="max-width:380px; width:100%">
+        <h3 class="modal-title">Scan Barcode</h3>
+        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block"></video>
+        <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at barcode...</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" id="scanner-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/@zxing/browser@0.1.4/umd/index.min.js"></script>
 <script>
+// Barcode scanner
+(function() {
+    var scanBtn     = document.getElementById('scan-barcode');
+    var scanModal   = document.getElementById('scanner-modal');
+    var cancelBtn   = document.getElementById('scanner-cancel');
+    var statusEl    = document.getElementById('scanner-status');
+    var codeReader  = null;
+
+    function closeScanner() {
+        if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
+        scanModal.style.display = 'none';
+        statusEl.textContent = 'Point camera at barcode...';
+    }
+
+    scanBtn.addEventListener('click', function() {
+        scanModal.style.display = 'flex';
+        codeReader = new ZXingBrowser.BrowserMultiFormatReader();
+        codeReader.decodeFromVideoDevice(null, 'scanner-video', function(result, err) {
+            if (result) {
+                document.getElementById('barcode').value = result.getText();
+                closeScanner();
+            }
+            if (err && !(err instanceof ZXingBrowser.NotFoundException)) {
+                statusEl.textContent = 'Camera error: ' + err.message;
+            }
+        }).catch(function(e) {
+            statusEl.textContent = 'Could not access camera. Check permissions.';
+        });
+    });
+
+    cancelBtn.addEventListener('click', closeScanner);
+})();
+
 // Barcode generate
 document.getElementById('gen-barcode').addEventListener('click', function() {
     var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
