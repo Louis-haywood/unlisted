@@ -216,7 +216,7 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </div>
 
-<script src="/assets/js/scanner.js"></script>
+<script src="/assets/js/scanner.js?v=4"></script>
 <script>
 (function() {
     var scanBtn   = document.getElementById('scan-barcode');

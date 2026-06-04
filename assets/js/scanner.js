@@ -1,9 +1,10 @@
 /**
- * LVScanner
+ * LVScanner v4
  * - Chrome/Android: native BarcodeDetector via live camera stream
  * - Safari/iOS: file input with capture="environment" + Quagga2 image decode
  *   (avoids all iOS video autoplay / playsinline issues entirely)
  */
+console.log('[LVScanner] v4 loaded');
 function LVScanner(containerId, onDetected, onStatus) {
     var QUAGGA_CDN = 'https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js';
     var container  = document.getElementById(containerId);
