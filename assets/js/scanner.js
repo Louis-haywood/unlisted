@@ -84,6 +84,15 @@ function LVScanner(containerId, onDetected, onStatus) {
         }, function(err) {
             if (!active) { try { Quagga.stop(); } catch(e) {} return; }
             if (err) { status('Camera error: ' + (err.message || err)); return; }
+
+            // iOS Safari requires playsinline on the video element or it renders black
+            var vid = container.querySelector('video');
+            if (vid) {
+                vid.setAttribute('playsinline', '');
+                vid.setAttribute('muted', '');
+                vid.muted = true;
+            }
+
             Quagga.start();
             status('Point camera at barcode...');
             var last = '', count = 0;
