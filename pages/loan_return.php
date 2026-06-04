@@ -134,7 +134,6 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
 <script src="/assets/js/scanner.js"></script>
 <script>
 (function() {
