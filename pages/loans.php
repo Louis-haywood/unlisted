@@ -56,7 +56,6 @@ require __DIR__ . '/../templates/sidebar.php';
                     <th>Checked Out</th>
                     <th>Due Date</th>
                     <th>Status</th>
-                    <th style="width:100px">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,14 +102,6 @@ require __DIR__ . '/../templates/sidebar.php';
                             <span class="pill pill-warning">On Loan</span>
                         <?php endif; ?>
                     </td>
-                    <td>
-                        <button class="btn btn-xs btn-success return-btn"
-                            data-loan-id="<?= (int)$loan['id'] ?>"
-                            data-item-name="<?= h(addslashes($loan['item_name'])) ?>"
-                            data-borrower="<?= h(addslashes($loan['borrower_name'])) ?>">
-                            Return
-                        </button>
-                    </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
@@ -119,37 +110,5 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </main>
 
-<!-- Return confirmation modal -->
-<div id="return-modal" class="modal-overlay" style="display:none">
-    <div class="modal-box">
-        <h3 class="modal-title">Confirm Return</h3>
-        <p class="modal-body" id="return-modal-body"></p>
-        <form method="POST" action="/loans/return" id="return-form">
-            <?= csrf_field() ?>
-            <input type="hidden" name="loan_id" id="return-loan-id" value="">
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="return-cancel">Cancel</button>
-                <button type="submit" class="btn btn-success">Mark as Returned</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-var returnModal = document.getElementById('return-modal');
-var returnBody  = document.getElementById('return-modal-body');
-var returnId    = document.getElementById('return-loan-id');
-
-document.querySelectorAll('.return-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        returnBody.textContent = 'Return "' + this.dataset.itemName + '" from ' + this.dataset.borrower + '?';
-        returnId.value = this.dataset.loanId;
-        returnModal.style.display = 'flex';
-    });
-});
-document.getElementById('return-cancel').addEventListener('click', function() {
-    returnModal.style.display = 'none';
-});
-</script>
 
 <?php require __DIR__ . '/../templates/footer.php'; ?>
