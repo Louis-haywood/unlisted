@@ -1,5 +1,6 @@
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }  /* prevents page-level horizontal scroll on iOS without breaking fixed elements */
 
 :root {
     --sidebar-bg:   #0F1117;
@@ -705,16 +706,31 @@ a:hover { text-decoration: underline; }
     body.nav-open .sidebar { transform: translateX(0); }
     body.nav-open .sidebar-backdrop { display: block; }
 
-    /* Main content fills full width */
-    .main-content { margin-left: 0; }
+    /* Main content: full width, no bleed */
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden; /* safe on iOS — only body/html overflow-x breaks fixed */
+    }
 
-    /* Topbar: compact, wrap actions below title */
+    /* App layout: prevent flex children from exceeding viewport */
+    .app-layout { width: 100%; max-width: 100vw; }
+
+    /* Topbar: stack actions below title on narrow screens */
     .topbar { padding: 0.75rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
     .topbar-title h1 { font-size: 1.125rem; }
     .topbar-actions { flex-wrap: wrap; gap: 0.4rem; width: 100%; }
-    .topbar-actions .btn { flex: 1; min-width: 0; justify-content: center; font-size: 0.8rem; padding: 0.45rem 0.75rem; }
+    .topbar-actions .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        min-height: 44px;
+    }
 
-    /* Reduce horizontal padding for page content */
+    /* Page content padding */
     .main-content > *:not(.topbar) {
         padding-left: 0.875rem;
         padding-right: 0.875rem;
@@ -729,23 +745,35 @@ a:hover { text-decoration: underline; }
     /* Collapse two-column layouts */
     .two-col-layout { grid-template-columns: 1fr; }
 
-    /* Tables: scroll inside their wrapper, never overflow the page */
-    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
-    .table { min-width: 480px; }
+    /* Tables: only the table-wrap scrolls, never the page */
+    .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+    }
+    .table { min-width: 420px; }
 
     /* Forms: single column */
     .form-grid { grid-template-columns: 1fr; }
     .form-card { padding: 1rem; }
 
-    /* Filter bar: wrap, search full width */
+    /* Prevent form elements from overflowing */
+    .form-input, .btn, select, textarea { max-width: 100%; }
+    .input-with-btn { flex-wrap: wrap; }
+    .input-addon-wrap { flex-wrap: wrap; }
+    .input-addon { border-radius: 0 0 6px 6px; border-left: 1px solid var(--border); border-top: none; width: 100%; }
+
+    /* Filter bar */
     .filter-form { flex-wrap: wrap; }
     .filter-search { flex: 1 0 100%; }
 
-    /* Step indicator */
+    /* Step indicator: tighter */
+    .step-indicator { padding: 1.25rem 0.75rem; }
     .step-line { width: 24px; }
     .step-label { font-size: 0.65rem; }
 
-    /* Modal: bottom sheet */
+    /* Modal: bottom sheet — feels native */
     .modal-overlay { align-items: flex-end; }
     .modal-box {
         max-width: none;
@@ -763,7 +791,7 @@ a:hover { text-decoration: underline; }
     .center-card-page { padding: 1.25rem; align-items: flex-start; padding-top: 2.5rem; }
     .auth-card { padding: 1.75rem 1.25rem; }
 
-    /* Larger touch targets inside sidebar */
+    /* Sidebar nav touch targets */
     .nav-item { padding: 0.75rem 1rem; font-size: 0.9rem; }
 }
 
