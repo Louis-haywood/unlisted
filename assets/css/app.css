@@ -705,9 +705,8 @@ a:hover { text-decoration: underline; }
     body.nav-open .sidebar { transform: translateX(0); }
     body.nav-open .sidebar-backdrop { display: block; }
 
-    /* Main content fills full width — no horizontal overflow */
-    .main-content { margin-left: 0; overflow-x: hidden; }
-    body { overflow-x: hidden; }
+    /* Main content fills full width */
+    .main-content { margin-left: 0; }
 
     /* Topbar: compact, wrap actions below title */
     .topbar { padding: 0.75rem 1rem; flex-wrap: wrap; gap: 0.5rem; }
@@ -730,10 +729,9 @@ a:hover { text-decoration: underline; }
     /* Collapse two-column layouts */
     .two-col-layout { grid-template-columns: 1fr; }
 
-    /* Tables: scrollable within card only — never break page width */
-    .card { overflow: hidden; }
-    .table-wrap, .card > .table { overflow-x: auto; -webkit-overflow-scrolling: touch; display: block; }
-    .table { min-width: 480px; width: 100%; }
+    /* Tables: scroll inside their wrapper, never overflow the page */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+    .table { min-width: 480px; }
 
     /* Forms: single column */
     .form-grid { grid-template-columns: 1fr; }
@@ -747,8 +745,8 @@ a:hover { text-decoration: underline; }
     .step-line { width: 24px; }
     .step-label { font-size: 0.65rem; }
 
-    /* Modal: full-width bottom sheet on mobile */
-    .modal-overlay { align-items: flex-end; padding: 0; }
+    /* Modal: bottom sheet */
+    .modal-overlay { align-items: flex-end; }
     .modal-box {
         max-width: none;
         width: 100%;
@@ -767,10 +765,6 @@ a:hover { text-decoration: underline; }
 
     /* Larger touch targets inside sidebar */
     .nav-item { padding: 0.75rem 1rem; font-size: 0.9rem; }
-
-    /* Step indicator */
-    .step-line { width: 24px; }
-    .step-label { font-size: 0.65rem; }
 }
 
 /* ── Responsive: small phones (≤ 480px) ──────────────────────────────────── */
@@ -786,13 +780,10 @@ a:hover { text-decoration: underline; }
     .step-label { display: none; }
     .step-line { width: 16px; }
 
-    /* Reasonable touch-target sizes for action buttons */
-    .btn { min-height: 40px; }
+    /* Touch-friendly inputs and buttons */
+    .btn { min-height: 44px; }
     .btn-xs { padding: 0.4rem 0.65rem; min-height: 34px; }
+    .form-input { padding: 0.65rem 0.75rem; font-size: 1rem; }
 
-    /* Inputs: slightly larger for touch */
-    .form-input { padding: 0.65rem 0.75rem; font-size: 0.9rem; }
-
-    /* Reduce main-content bottom padding */
     .main-content { padding-bottom: 1.5rem; }
 }
