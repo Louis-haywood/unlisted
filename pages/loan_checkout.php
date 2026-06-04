@@ -217,56 +217,48 @@ require __DIR__ . '/../templates/sidebar.php';
 <main class="main-content">
     <div class="topbar">
         <div class="topbar-title">
+            <?php if ($step > 1): ?>
+                <a href="/loans/checkout" class="back-link">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>Start Over
+                </a>
+            <?php endif; ?>
             <h1>Check Out</h1>
         </div>
-        <?php if ($step > 1): ?>
-        <div class="topbar-actions">
-            <a href="/loans/checkout" class="btn btn-ghost">Start Over</a>
+        <div class="topbar-actions" style="align-items:center">
+            <span style="font-size:0.8rem; color:var(--text-muted)">Step <?= $step ?> of 4</span>
         </div>
-        <?php endif; ?>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="height:3px; background:var(--border)">
+        <div style="height:3px; background:var(--blue); width:<?= ($step / 4 * 100) ?>%; transition:width 0.3s ease"></div>
     </div>
 
     <?php if ($errors): ?>
-        <div class="alert alert-error">
-            <ul class="error-list"><?php foreach ($errors as $e): ?><li><?= h($e) ?></li><?php endforeach; ?></ul>
+        <div class="alert alert-error" style="margin:1rem 1rem 0">
+            <?php foreach ($errors as $e): ?><?= h($e) ?><?php endforeach; ?>
         </div>
     <?php endif; ?>
 
-    <!-- Step indicator -->
-    <div class="step-indicator">
-        <?php $steps = ['Find Item', 'Select Borrower', 'Loan Details', 'Confirm']; ?>
-        <?php foreach ($steps as $i => $label): ?>
-            <?php $n = $i + 1; $cls = $n < $step ? 'done' : ($n === $step ? 'active' : ''); ?>
-            <div class="step <?= $cls ?>">
-                <div class="step-num"><?php if ($n < $step): ?><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><?php else: ?><?= $n ?><?php endif; ?></div>
-                <div class="step-label"><?= $label ?></div>
-            </div>
-            <?php if ($i < count($steps) - 1): ?><div class="step-line"></div><?php endif; ?>
-        <?php endforeach; ?>
-    </div>
-
-    <div class="card form-card" style="max-width:640px; margin:0 auto">
+    <div class="co-wrap">
 
     <?php if ($step === 1): ?>
-        <!-- Express Check Out -->
-        <div style="margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border)">
-            <h2 class="card-section-title" style="margin-bottom:0.25rem">Express Check Out</h2>
-            <p class="text-muted" style="margin-bottom:1rem; font-size:0.875rem">Scan the item's barcode to find it instantly.</p>
-            <button type="button" class="btn btn-primary" id="express-scan-btn" style="width:100%; padding:0.875rem; font-size:1rem">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+
+        <div class="co-section">
+            <p class="co-label">Scan the item barcode</p>
+            <button type="button" class="btn btn-primary co-scan-btn" id="express-scan-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 Scan Barcode
             </button>
-            <div id="express-result" style="display:none; margin-top:1rem; padding:1rem; background:var(--bg-subtle,#f9fafb); border-radius:8px; border:1px solid var(--border)">
-                <div style="display:flex; align-items:center; justify-content:space-between">
-                    <div>
-                        <div style="font-weight:600" id="express-item-name"></div>
-                        <div class="text-muted" style="font-size:0.85rem" id="express-item-stock"></div>
-                    </div>
-                    <button type="button" class="btn btn-ghost" id="express-rescan" style="font-size:0.8rem">Rescan</button>
+            <div id="express-error" class="co-error" style="display:none"></div>
+            <div id="express-result" class="co-found" style="display:none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+                <div style="flex:1; min-width:0">
+                    <div style="font-weight:600" id="express-item-name"></div>
+                    <div style="font-size:0.8rem; color:var(--text-muted)" id="express-item-stock"></div>
                 </div>
+                <button type="button" class="btn btn-ghost btn-xs" id="express-rescan">Rescan</button>
             </div>
-            <div id="express-error" style="display:none; margin-top:0.75rem; color:#dc2626; font-size:0.875rem"></div>
-            <!-- Hidden form submitted after a successful scan -->
             <form method="POST" action="/loans/checkout" id="express-form" style="display:none">
                 <?= csrf_field() ?>
                 <input type="hidden" name="step" value="1">
@@ -274,187 +266,173 @@ require __DIR__ . '/../templates/sidebar.php';
             </form>
         </div>
 
-        <!-- Manual search -->
-        <h2 class="card-section-title">Or Search Manually</h2>
-        <form method="POST" action="/loans/checkout">
-            <?= csrf_field() ?>
-            <input type="hidden" name="step" value="1">
-            <div class="form-group">
-                <label class="form-label" for="item-search-input">Search by name or barcode</label>
-                <input
-                    type="text"
-                    id="item-search-input"
-                    name="item_search"
-                    class="form-input"
-                    placeholder="Item name or barcode…"
-                    autocomplete="off"
-                >
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-secondary">Find Item</button>
-            </div>
-        </form>
+        <div class="co-divider">or search by name</div>
+
+        <div class="co-section">
+            <form method="POST" action="/loans/checkout">
+                <?= csrf_field() ?>
+                <input type="hidden" name="step" value="1">
+                <div style="display:flex; gap:0.5rem">
+                    <input type="text" id="item-search-input" name="item_search" class="form-input" placeholder="Item name or barcode…" autocomplete="off" style="flex:1">
+                    <button type="submit" class="btn btn-secondary">Search</button>
+                </div>
+            </form>
+        </div>
 
     <?php elseif ($step === 2 && $checkout_item): ?>
-        <!-- Step 2: Borrower selection -->
-        <div class="checkout-item-summary">
-            <div class="checkout-item-info">
-                <?php if ($checkout_item['photo_path']): ?>
-                    <img src="/uploads/<?= h($checkout_item['photo_path']) ?>" class="checkout-item-thumb" alt="">
-                <?php endif; ?>
-                <div>
-                    <strong><?= h($checkout_item['name']) ?></strong>
-                    <?php if ($checkout_item['category_name']): ?>
-                        <span class="text-muted"> · <?= h($checkout_item['category_name']) ?></span>
-                    <?php endif; ?>
-                    <br><span class="text-muted"><?= (int)$checkout_item['quantity'] ?> in stock</span>
+
+        <!-- Item banner -->
+        <div class="co-item-banner">
+            <?php if ($checkout_item['photo_path']): ?>
+                <img src="/uploads/<?= h($checkout_item['photo_path']) ?>" class="co-item-photo" alt="">
+            <?php else: ?>
+                <div class="co-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+            <?php endif; ?>
+            <div>
+                <div class="co-item-name"><?= h($checkout_item['name']) ?></div>
+                <div class="co-item-meta">
+                    <?php if ($checkout_item['category_name']): ?><?= h($checkout_item['category_name']) ?> · <?php endif; ?>
+                    <?= (int)$checkout_item['quantity'] ?> in stock
                 </div>
             </div>
         </div>
 
-        <h2 class="card-section-title" style="margin-top:1.5rem">Select Borrower</h2>
-        <form method="POST" action="/loans/checkout" id="borrower-form">
-            <?= csrf_field() ?>
-            <input type="hidden" name="step" value="2">
+        <div class="co-section">
+            <p class="co-label">Who is borrowing this?</p>
+            <form method="POST" action="/loans/checkout" id="borrower-form">
+                <?= csrf_field() ?>
+                <input type="hidden" name="step" value="2">
 
-            <div class="form-group">
-                <div class="radio-tabs" id="borrower-mode-tabs">
-                    <label class="radio-tab active" id="tab-existing">
-                        <input type="radio" name="borrower_mode" value="existing" checked> Existing borrower
-                    </label>
-                    <label class="radio-tab" id="tab-new">
-                        <input type="radio" name="borrower_mode" value="new"> New borrower
-                    </label>
+                <div class="co-tabs" id="borrower-mode-tabs">
+                    <button type="button" class="co-tab active" data-target="existing-section" data-value="existing">Existing</button>
+                    <button type="button" class="co-tab" data-target="new-section" data-value="new">New borrower</button>
                 </div>
-            </div>
+                <input type="hidden" name="borrower_mode" id="borrower-mode-value" value="existing">
 
-            <div id="existing-section">
-                <?php if (empty($borrowers_list)): ?>
-                    <p class="text-muted" style="margin-bottom:1rem">No borrowers yet — create one using the "New borrower" tab.</p>
-                <?php else: ?>
-                <div class="form-group">
-                    <label class="form-label" for="borrower_id">Borrower</label>
-                    <select name="borrower_id" id="borrower_id" class="form-input form-select">
-                        <option value="">— Select —</option>
-                        <?php foreach ($borrowers_list as $b): ?>
-                            <option value="<?= (int)$b['id'] ?>"><?= h($b['name']) ?><?= $b['email'] ? ' (' . h($b['email']) . ')' : '' ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div id="existing-section">
+                    <?php if (empty($borrowers_list)): ?>
+                        <p class="text-muted" style="margin:1rem 0 0.5rem">No borrowers yet — switch to "New borrower".</p>
+                    <?php else: ?>
+                        <select name="borrower_id" id="borrower_id" class="form-input form-select" style="margin-top:0.75rem">
+                            <option value="">— Select borrower —</option>
+                            <?php foreach ($borrowers_list as $b): ?>
+                                <option value="<?= (int)$b['id'] ?>"><?= h($b['name']) ?><?= $b['email'] ? ' — ' . h($b['email']) : '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php endif; ?>
                 </div>
-                <?php endif; ?>
-            </div>
 
-            <div id="new-section" style="display:none">
-                <div class="form-grid">
+                <div id="new-section" style="display:none; margin-top:0.75rem">
                     <div class="form-group">
                         <label class="form-label" for="b_name">Name <span class="required">*</span></label>
-                        <input type="text" id="b_name" name="b_name" class="form-input" placeholder="Full name">
+                        <input type="text" id="b_name" name="b_name" class="form-input" placeholder="Full name" autocomplete="name">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="b_email">Email</label>
-                        <input type="email" id="b_email" name="b_email" class="form-input" placeholder="email@example.com">
+                        <input type="email" id="b_email" name="b_email" class="form-input" placeholder="email@example.com" autocomplete="email">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="b_phone">Phone</label>
-                        <input type="tel" id="b_phone" name="b_phone" class="form-input" placeholder="+44 7000 000000">
-                    </div>
-                    <div class="form-group form-col-full">
-                        <label class="form-label" for="b_address">Address</label>
-                        <textarea id="b_address" name="b_address" class="form-input form-textarea" rows="2" placeholder="Optional"></textarea>
+                        <input type="tel" id="b_phone" name="b_phone" class="form-input" placeholder="+44 7000 000000" autocomplete="tel">
                     </div>
                 </div>
-            </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Next</button>
-            </div>
-        </form>
+                <button type="submit" class="btn btn-primary co-submit-btn">Continue</button>
+            </form>
+        </div>
 
     <?php elseif ($step === 3 && $checkout_item): ?>
-        <!-- Step 3: Loan details -->
-        <div class="checkout-item-summary">
-            <div class="checkout-item-info">
-                <?php if ($checkout_item['photo_path']): ?>
-                    <img src="/uploads/<?= h($checkout_item['photo_path']) ?>" class="checkout-item-thumb" alt="">
-                <?php endif; ?>
-                <div>
-                    <strong><?= h($checkout_item['name']) ?></strong>
-                    <br><span class="text-muted"><?= (int)$checkout_item['quantity'] ?> in stock</span>
+
+        <!-- Item + borrower banner -->
+        <div class="co-item-banner">
+            <?php if ($checkout_item['photo_path']): ?>
+                <img src="/uploads/<?= h($checkout_item['photo_path']) ?>" class="co-item-photo" alt="">
+            <?php else: ?>
+                <div class="co-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
+            <?php endif; ?>
+            <div>
+                <div class="co-item-name"><?= h($checkout_item['name']) ?></div>
+                <div class="co-item-meta">
+                    <?php if ($checkout_borrower): ?>Borrower: <strong><?= h($checkout_borrower['name']) ?></strong><?php endif; ?>
                 </div>
             </div>
-            <?php if ($checkout_borrower): ?>
-            <div class="checkout-borrower-info">
-                Going to: <strong><?= h($checkout_borrower['name']) ?></strong>
-            </div>
-            <?php endif; ?>
         </div>
 
-        <h2 class="card-section-title" style="margin-top:1.5rem">Loan Details</h2>
-        <form method="POST" action="/loans/checkout">
-            <?= csrf_field() ?>
-            <input type="hidden" name="step" value="3">
-            <div class="form-grid">
+        <div class="co-section">
+            <p class="co-label">Loan details</p>
+            <form method="POST" action="/loans/checkout">
+                <?= csrf_field() ?>
+                <input type="hidden" name="step" value="3">
                 <div class="form-group">
-                    <label class="form-label" for="quantity_loaned">Quantity to loan <span class="required">*</span></label>
+                    <label class="form-label" for="quantity_loaned">Quantity</label>
                     <input type="number" id="quantity_loaned" name="quantity_loaned" class="form-input"
                         min="1" max="<?= (int)$checkout_item['quantity'] ?>" value="1" required>
-                    <span class="form-hint">Max: <?= (int)$checkout_item['quantity'] ?></span>
+                    <span class="form-hint">Max available: <?= (int)$checkout_item['quantity'] ?></span>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="due_date">Due date (optional)</label>
+                    <label class="form-label" for="due_date">Due date <span style="font-weight:400; color:var(--text-muted)">(optional)</span></label>
                     <input type="date" id="due_date" name="due_date" class="form-input" min="<?= date('Y-m-d') ?>">
                 </div>
-                <div class="form-group form-col-full">
-                    <label class="form-label" for="notes">Notes (optional)</label>
-                    <textarea id="notes" name="notes" class="form-input form-textarea" rows="3" placeholder="Any additional notes…"></textarea>
+                <div class="form-group">
+                    <label class="form-label" for="notes">Notes <span style="font-weight:400; color:var(--text-muted)">(optional)</span></label>
+                    <textarea id="notes" name="notes" class="form-input form-textarea" rows="2" placeholder="Any notes…"></textarea>
                 </div>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Review</button>
-            </div>
-        </form>
+                <button type="submit" class="btn btn-primary co-submit-btn">Review</button>
+            </form>
+        </div>
 
     <?php elseif ($step === 4 && $checkout_item && $checkout_borrower): ?>
-        <!-- Step 4: Confirmation -->
-        <h2 class="card-section-title">Confirm Checkout</h2>
-        <div class="confirm-summary">
-            <div class="confirm-row">
-                <span class="confirm-label">Item</span>
-                <span class="confirm-value"><?= h($checkout_item['name']) ?></span>
-            </div>
-            <div class="confirm-row">
-                <span class="confirm-label">Borrower</span>
-                <span class="confirm-value"><?= h($checkout_borrower['name']) ?></span>
-            </div>
-            <div class="confirm-row">
-                <span class="confirm-label">Quantity</span>
-                <span class="confirm-value"><?= (int)$_SESSION['checkout']['quantity_loaned'] ?></span>
-            </div>
-            <div class="confirm-row">
-                <span class="confirm-label">Due Date</span>
-                <span class="confirm-value">
-                    <?= $_SESSION['checkout']['due_date'] ? h(date('d M Y', strtotime($_SESSION['checkout']['due_date']))) : '— No due date —' ?>
-                </span>
-            </div>
-            <?php if ($_SESSION['checkout']['notes']): ?>
-            <div class="confirm-row">
-                <span class="confirm-label">Notes</span>
-                <span class="confirm-value"><?= h($_SESSION['checkout']['notes']) ?></span>
-            </div>
+
+        <!-- Confirmation -->
+        <div class="co-item-banner">
+            <?php if ($checkout_item['photo_path']): ?>
+                <img src="/uploads/<?= h($checkout_item['photo_path']) ?>" class="co-item-photo" alt="">
+            <?php else: ?>
+                <div class="co-item-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                </div>
             <?php endif; ?>
-        </div>
-        <form method="POST" action="/loans/checkout">
-            <?= csrf_field() ?>
-            <input type="hidden" name="step"    value="4">
-            <input type="hidden" name="confirm" value="1">
-            <div class="form-actions">
-                <a href="/loans/checkout?step=3" class="btn btn-ghost">Back</a>
-                <button type="submit" class="btn btn-primary">Confirm Check Out</button>
+            <div>
+                <div class="co-item-name"><?= h($checkout_item['name']) ?></div>
+                <div class="co-item-meta">to <strong><?= h($checkout_borrower['name']) ?></strong></div>
             </div>
-        </form>
+        </div>
+
+        <div class="co-section">
+            <p class="co-label">Confirm details</p>
+            <div class="co-summary">
+                <div class="co-summary-row">
+                    <span>Quantity</span>
+                    <strong><?= (int)$_SESSION['checkout']['quantity_loaned'] ?></strong>
+                </div>
+                <div class="co-summary-row">
+                    <span>Due date</span>
+                    <strong><?= $_SESSION['checkout']['due_date'] ? h(date('d M Y', strtotime($_SESSION['checkout']['due_date']))) : 'No due date' ?></strong>
+                </div>
+                <?php if ($_SESSION['checkout']['notes']): ?>
+                <div class="co-summary-row">
+                    <span>Notes</span>
+                    <strong><?= h($_SESSION['checkout']['notes']) ?></strong>
+                </div>
+                <?php endif; ?>
+            </div>
+            <form method="POST" action="/loans/checkout">
+                <?= csrf_field() ?>
+                <input type="hidden" name="step"    value="4">
+                <input type="hidden" name="confirm" value="1">
+                <button type="submit" class="btn btn-primary co-submit-btn">Confirm Check Out</button>
+            </form>
+            <a href="/loans/checkout?step=3" class="co-back-link">Edit details</a>
+        </div>
 
     <?php else: ?>
-        <p class="text-muted">Something went wrong. <a href="/loans/checkout">Start over</a>.</p>
+        <div class="co-section">
+            <p class="text-muted">Something went wrong. <a href="/loans/checkout">Start over</a>.</p>
+        </div>
     <?php endif; ?>
 
     </div>
@@ -554,19 +532,15 @@ require __DIR__ . '/../templates/sidebar.php';
 
 // Borrower mode tabs (step 2)
 (function() {
-    var radios = document.querySelectorAll('[name=borrower_mode]');
-    if (!radios.length) return;
-    var existing = document.getElementById('existing-section');
-    var newSec   = document.getElementById('new-section');
-    var tabs     = document.querySelectorAll('.radio-tab');
-
-    radios.forEach(function(r) {
-        r.addEventListener('change', function() {
-            var isNew = this.value === 'new';
-            if (existing) existing.style.display = isNew ? 'none' : 'block';
-            if (newSec)   newSec.style.display   = isNew ? 'block' : 'none';
+    var tabs = document.querySelectorAll('.co-tab');
+    if (!tabs.length) return;
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
             tabs.forEach(function(t) { t.classList.remove('active'); });
-            this.parentElement.classList.add('active');
+            this.classList.add('active');
+            document.getElementById('existing-section').style.display = this.dataset.value === 'existing' ? 'block' : 'none';
+            document.getElementById('new-section').style.display      = this.dataset.value === 'new'      ? 'block' : 'none';
+            document.getElementById('borrower-mode-value').value = this.dataset.value;
         });
     });
 })();
