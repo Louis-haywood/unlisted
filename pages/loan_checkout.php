@@ -238,7 +238,7 @@ require __DIR__ . '/../templates/sidebar.php';
         <?php foreach ($steps as $i => $label): ?>
             <?php $n = $i + 1; $cls = $n < $step ? 'done' : ($n === $step ? 'active' : ''); ?>
             <div class="step <?= $cls ?>">
-                <div class="step-num"><?= $n < $step ? '✓' : $n ?></div>
+                <div class="step-num"><?php if ($n < $step): ?><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><?php else: ?><?= $n ?><?php endif; ?></div>
                 <div class="step-label"><?= $label ?></div>
             </div>
             <?php if ($i < count($steps) - 1): ?><div class="step-line"></div><?php endif; ?>
@@ -253,7 +253,8 @@ require __DIR__ . '/../templates/sidebar.php';
             <h2 class="card-section-title" style="margin-bottom:0.25rem">Express Check Out</h2>
             <p class="text-muted" style="margin-bottom:1rem; font-size:0.875rem">Scan the item's barcode to find it instantly.</p>
             <button type="button" class="btn btn-primary" id="express-scan-btn" style="width:100%; padding:0.875rem; font-size:1rem">
-                📷 Scan Barcode
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                Scan Barcode
             </button>
             <div id="express-result" style="display:none; margin-top:1rem; padding:1rem; background:var(--bg-subtle,#f9fafb); border-radius:8px; border:1px solid var(--border)">
                 <div style="display:flex; align-items:center; justify-content:space-between">

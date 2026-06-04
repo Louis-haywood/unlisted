@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn btn-primary btn-full">Sign in</button>
 
             <div style="text-align:center; margin-top:1rem">
-                <a href="/" style="font-size:0.8rem; color:#6B7280">← Back to home</a>
+                <a href="/" style="font-size:0.8rem; color:#6B7280; display:inline-flex; align-items:center; gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Back to home</a>
             </div>
         </form>
     </div>

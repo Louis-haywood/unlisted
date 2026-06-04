@@ -92,7 +92,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <main class="main-content">
     <div class="topbar">
         <div class="topbar-title">
-            <a href="/items" class="back-link">← Items</a>
+            <a href="/items" class="back-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>Items</a>
             <h1>Add Item</h1>
         </div>
     </div>

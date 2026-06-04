@@ -81,7 +81,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <main class="main-content">
     <div class="topbar">
         <div class="topbar-title">
-            <a href="/loans" class="back-link">← Active Loans</a>
+            <a href="/loans" class="back-link"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>Active Loans</a>
             <h1>Return Item</h1>
         </div>
     </div>
@@ -93,7 +93,8 @@ require __DIR__ . '/../templates/sidebar.php';
         <p class="text-muted" style="margin-bottom:1.25rem; font-size:0.875rem">Point the camera at the item's barcode to find its active loan.</p>
 
         <button type="button" class="btn btn-primary" id="return-scan-btn" style="width:100%; padding:0.875rem; font-size:1rem; margin-bottom:1rem">
-            📷 Scan Barcode
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Scan Barcode
         </button>
 
         <!-- Scanner modal -->
