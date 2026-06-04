@@ -291,7 +291,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 >
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-secondary">Find Item →</button>
+                <button type="submit" class="btn btn-secondary">Find Item</button>
             </div>
         </form>
 
@@ -366,7 +366,7 @@ require __DIR__ . '/../templates/sidebar.php';
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Next →</button>
+                <button type="submit" class="btn btn-primary">Next</button>
             </div>
         </form>
 
@@ -410,7 +410,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 </div>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Review →</button>
+                <button type="submit" class="btn btn-primary">Review</button>
             </div>
         </form>
 
