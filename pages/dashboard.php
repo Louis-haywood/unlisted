@@ -130,7 +130,7 @@ require __DIR__ . '/../templates/sidebar.php';
                     <p>No items yet. <a href="/items/add">Add your first item</a>.</p>
                 </div>
             <?php else: ?>
-            <table class="table">
+            <div class="table-wrap"><table class="table">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -170,7 +170,7 @@ require __DIR__ . '/../templates/sidebar.php';
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
-            </table>
+            </table></div>
             <?php endif; ?>
         </div>
 

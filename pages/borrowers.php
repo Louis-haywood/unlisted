@@ -61,7 +61,7 @@ if ($view_id) {
             <?php if (empty($borrower_loans)): ?>
                 <div class="empty-state"><p>No loans recorded for this borrower.</p></div>
             <?php else: ?>
-            <table class="table">
+            <div class="table-wrap"><table class="table">
                 <thead>
                     <tr>
                         <th>Item</th>
@@ -94,7 +94,7 @@ if ($view_id) {
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
-            </table>
+            </table></div>
             <?php endif; ?>
         </div>
     </div>
@@ -193,7 +193,7 @@ require __DIR__ . '/../templates/sidebar.php';
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                <table class="table">
+                <div class="table-wrap"><table class="table">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -225,7 +225,7 @@ require __DIR__ . '/../templates/sidebar.php';
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
-                </table>
+                </table></div>
                 <?= pagination_html($pag, '/borrowers' . ($search ? '?search=' . urlencode($search) : '')) ?>
                 <?php endif; ?>
             </div>

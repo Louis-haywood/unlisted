@@ -219,7 +219,7 @@ require __DIR__ . '/../templates/sidebar.php';
         <?php if (empty($loan_history)): ?>
             <div class="empty-state"><p>No loans recorded for this item.</p></div>
         <?php else: ?>
-        <table class="table">
+        <div class="table-wrap"><table class="table">
             <thead>
                 <tr>
                     <th>Borrower</th>
@@ -252,7 +252,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 </tr>
             <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
         <?php endif; ?>
     </div>
 </main>

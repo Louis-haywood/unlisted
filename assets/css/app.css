@@ -1,6 +1,9 @@
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { overflow-x: hidden; }  /* prevents page-level horizontal scroll on iOS without breaking fixed elements */
+html {
+    overflow-x: hidden;
+    overscroll-behavior-x: none; /* prevents rubber-band horizontal scroll on iOS */
+}
 
 :root {
     --sidebar-bg:   #0F1117;
