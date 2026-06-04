@@ -511,19 +511,25 @@ require __DIR__ . '/../templates/sidebar.php';
         }
 
         modal.style.display = 'flex';
+        statusEl.textContent = 'Starting camera...';
         var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf'] });
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(function(stream) {
+                statusEl.textContent = 'Camera open — point at barcode...';
                 videoEl.srcObject = stream;
                 videoEl.play();
                 var active = true;
+                var frameCount = 0;
                 stopScan = function() { active = false; stream.getTracks().forEach(function(t){ t.stop(); }); };
                 (function scan() {
                     if (!active) return;
+                    frameCount++;
                     detector.detect(videoEl).then(function(results) {
                         if (!active) return;
+                        statusEl.textContent = 'Scanning... frame ' + frameCount + ' — ' + results.length + ' barcode(s) found';
                         if (results.length) {
                             var barcode = results[0].rawValue;
+                            statusEl.textContent = 'Found: ' + barcode;
                             closeScanner();
                             fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
                                 .then(function(r) { return r.json(); })
@@ -546,7 +552,10 @@ require __DIR__ . '/../templates/sidebar.php';
                         } else {
                             requestAnimationFrame(scan);
                         }
-                    }).catch(function() { if (active) requestAnimationFrame(scan); });
+                    }).catch(function(e) {
+                        statusEl.textContent = 'detect() error: ' + e.message;
+                        if (active) requestAnimationFrame(scan);
+                    });
                 })();
             })
             .catch(function(e) {
@@ -562,6 +571,7 @@ require __DIR__ . '/../templates/sidebar.php';
 })();
 </script>
 
+<script>
 // Barcode scanner detection on step 1 search field
 (function() {
     var input = document.getElementById('item-search-input');
