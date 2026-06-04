@@ -34,6 +34,7 @@ require __DIR__ . '/../templates/sidebar.php';
             <span class="topbar-sub"><?= count($loans) ?> active loan<?= count($loans) !== 1 ? 's' : '' ?></span>
         </div>
         <div class="topbar-actions">
+            <a href="/loans/return" class="btn btn-secondary">📷 Scan to Return</a>
             <a href="/loans/checkout" class="btn btn-primary">New Check Out</a>
         </div>
     </div>

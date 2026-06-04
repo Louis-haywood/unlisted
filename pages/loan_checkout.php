@@ -8,8 +8,9 @@ $user       = current_user();
 // Initialise checkout session bucket
 if (!isset($_SESSION['checkout'])) $_SESSION['checkout'] = [];
 
-$step   = (int)($_POST['step'] ?? ($_GET['step'] ?? 1));
-$errors = [];
+$step        = (int)($_POST['step'] ?? ($_GET['step'] ?? 1));
+$posted_step = $step; // remember what was actually submitted — $step may change during processing
+$errors      = [];
 
 // ── AJAX — Barcode lookup for express checkout ────────────────────────────────
 if (($_GET['action'] ?? '') === 'barcode_lookup') {
@@ -68,7 +69,7 @@ if ($step === 1 && isset($_GET['item_id'])) {
 }
 
 // ── STEP 2 — Borrower selection ───────────────────────────────────────────────
-if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($posted_step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) { $errors[] = 'Invalid token.'; }
     else {
         $borrower_mode = $_POST['borrower_mode'] ?? 'existing';
@@ -104,7 +105,7 @@ if ($step === 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── STEP 3 — Loan details ─────────────────────────────────────────────────────
-if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($posted_step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) { $errors[] = 'Invalid token.'; }
     else {
         $qty      = (int)($_POST['quantity_loaned'] ?? 1);
@@ -130,7 +131,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // ── STEP 4 — Confirm and process ─────────────────────────────────────────────
-if ($step === 4 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['confirm'])) {
+if ($posted_step === 4 && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['confirm'])) {
     if (!csrf_verify()) { $errors[] = 'Invalid token.'; }
     else {
         $co = $_SESSION['checkout'];
