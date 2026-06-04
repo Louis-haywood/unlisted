@@ -123,8 +123,4 @@ function LVScanner(containerId, onDetected, onStatus) {
     };
 
     this.stop = function() { cleanup(); };
-
-    // Stop camera if user navigates away mid-scan
-    window.addEventListener('pagehide', cleanup);
-    window.addEventListener('beforeunload', cleanup);
 }
