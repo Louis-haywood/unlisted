@@ -208,76 +208,40 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Barcode</h3>
-        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
-        <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at barcode...</p>
+        <div id="scanner-container" style="width:100%; border-radius:8px; overflow:hidden; background:#000; min-height:200px"></div>
+        <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Starting...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="scanner-cancel">Cancel</button>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+<script src="/assets/js/scanner.js"></script>
 <script>
 (function() {
     var scanBtn   = document.getElementById('scan-barcode');
     var scanModal = document.getElementById('scanner-modal');
     var cancelBtn = document.getElementById('scanner-cancel');
     var statusEl  = document.getElementById('scanner-status');
-    var videoEl   = document.getElementById('scanner-video');
-    var stopScan  = null;
+    var scanner   = null;
 
     function closeScanner() {
-        if (stopScan) { stopScan(); stopScan = null; }
+        if (scanner) { scanner.stop(); scanner = null; }
         scanModal.style.display = 'none';
-        videoEl.srcObject = null;
-        statusEl.textContent = 'Point camera at barcode...';
+        statusEl.textContent = 'Starting...';
     }
 
     scanBtn.addEventListener('click', function() {
-        if (!navigator.mediaDevices) {
-            statusEl.textContent = 'Camera requires HTTPS.';
-            scanModal.style.display = 'flex';
-            return;
-        }
-        if (!('BarcodeDetector' in window)) {
-            statusEl.textContent = 'Barcode detection not supported in this browser. Try Chrome on Android.';
-            scanModal.style.display = 'flex';
-            return;
-        }
         scanModal.style.display = 'flex';
-        statusEl.textContent = 'Starting camera...';
-        var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf'] });
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(function(stream) {
-                statusEl.textContent = 'Camera open — point at barcode...';
-                videoEl.srcObject = stream;
-                videoEl.play();
-                var active = true;
-                var frameCount = 0;
-                stopScan = function() { active = false; stream.getTracks().forEach(function(t){ t.stop(); }); };
-                (function scan() {
-                    if (!active) return;
-                    frameCount++;
-                    detector.detect(videoEl).then(function(results) {
-                        if (!active) return;
-                        statusEl.textContent = 'Scanning... frame ' + frameCount + ' — ' + results.length + ' barcode(s) found';
-                        if (results.length) {
-                            statusEl.textContent = 'Found: ' + results[0].rawValue;
-                            document.getElementById('barcode').value = results[0].rawValue;
-                            closeScanner();
-                        } else {
-                            requestAnimationFrame(scan);
-                        }
-                    }).catch(function(e) {
-                        statusEl.textContent = 'detect() error: ' + e.message;
-                        if (active) requestAnimationFrame(scan);
-                    });
-                })();
-            })
-            .catch(function(e) {
-                statusEl.textContent = e.name === 'NotAllowedError'
-                    ? 'Camera permission denied — allow it in browser settings.'
-                    : 'Could not open camera: ' + e.message;
-            });
+        scanner = new LVScanner('scanner-container',
+            function(barcode) {
+                document.getElementById('barcode').value = barcode;
+                closeScanner();
+            },
+            function(msg) { statusEl.textContent = msg; }
+        );
+        scanner.start();
     });
 
     cancelBtn.addEventListener('click', closeScanner);

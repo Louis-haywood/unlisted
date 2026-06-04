@@ -464,14 +464,16 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="express-scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Item Barcode</h3>
-        <video id="express-scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
-        <p id="express-scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at item barcode...</p>
+        <div id="express-scanner-container" style="width:100%; border-radius:8px; overflow:hidden; background:#000; min-height:200px"></div>
+        <p id="express-scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Starting...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="express-scanner-cancel">Cancel</button>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+<script src="/assets/js/scanner.js"></script>
 <script>
 (function() {
     var scanBtn   = document.getElementById('express-scan-btn');
@@ -479,7 +481,6 @@ require __DIR__ . '/../templates/sidebar.php';
     var cancelBtn = document.getElementById('express-scanner-cancel');
     var modal     = document.getElementById('express-scanner-modal');
     var statusEl  = document.getElementById('express-scanner-status');
-    var videoEl   = document.getElementById('express-scanner-video');
     var resultBox = document.getElementById('express-result');
     var errorBox  = document.getElementById('express-error');
     var itemName  = document.getElementById('express-item-name');
@@ -488,83 +489,43 @@ require __DIR__ . '/../templates/sidebar.php';
     var form      = document.getElementById('express-form');
     if (!scanBtn) return;
 
-    var stopScan = null;
+    var scanner = null;
 
     function closeScanner() {
-        if (stopScan) { stopScan(); stopScan = null; }
+        if (scanner) { scanner.stop(); scanner = null; }
         modal.style.display = 'none';
-        videoEl.srcObject = null;
-        statusEl.textContent = 'Point camera at item barcode...';
+        statusEl.textContent = 'Starting...';
     }
 
     function openScanner() {
         errorBox.style.display = 'none';
         resultBox.style.display = 'none';
-
-        if (!navigator.mediaDevices) {
-            statusEl.textContent = 'Camera requires HTTPS.';
-            modal.style.display = 'flex';
-            return;
-        }
-        if (!('BarcodeDetector' in window)) {
-            statusEl.textContent = 'Barcode detection not supported in this browser. Try Chrome on Android.';
-            modal.style.display = 'flex';
-            return;
-        }
-
         modal.style.display = 'flex';
-        statusEl.textContent = 'Starting camera...';
-        var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf'] });
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(function(stream) {
-                statusEl.textContent = 'Camera open — point at barcode...';
-                videoEl.srcObject = stream;
-                videoEl.play();
-                var active = true;
-                var frameCount = 0;
-                stopScan = function() { active = false; stream.getTracks().forEach(function(t){ t.stop(); }); };
-                (function scan() {
-                    if (!active) return;
-                    frameCount++;
-                    detector.detect(videoEl).then(function(results) {
-                        if (!active) return;
-                        statusEl.textContent = 'Scanning... frame ' + frameCount + ' — ' + results.length + ' barcode(s) found';
-                        if (results.length) {
-                            var barcode = results[0].rawValue;
-                            statusEl.textContent = 'Found: ' + barcode;
-                            closeScanner();
-                            fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
-                                .then(function(r) { return r.json(); })
-                                .then(function(data) {
-                                    if (data.error) {
-                                        errorBox.textContent = data.error;
-                                        errorBox.style.display = 'block';
-                                        return;
-                                    }
-                                    itemIdIn.value = data.id;
-                                    itemName.textContent = data.name;
-                                    itemStock.textContent = data.quantity + ' in stock';
-                                    resultBox.style.display = 'block';
-                                    setTimeout(function() { form.submit(); }, 800);
-                                })
-                                .catch(function() {
-                                    errorBox.textContent = 'Network error — please try again.';
-                                    errorBox.style.display = 'block';
-                                });
-                        } else {
-                            requestAnimationFrame(scan);
+        scanner = new LVScanner('express-scanner-container',
+            function(barcode) {
+                closeScanner();
+                fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.error) {
+                            errorBox.textContent = data.error;
+                            errorBox.style.display = 'block';
+                            return;
                         }
-                    }).catch(function(e) {
-                        statusEl.textContent = 'detect() error: ' + e.message;
-                        if (active) requestAnimationFrame(scan);
+                        itemIdIn.value = data.id;
+                        itemName.textContent = data.name;
+                        itemStock.textContent = data.quantity + ' in stock';
+                        resultBox.style.display = 'block';
+                        setTimeout(function() { form.submit(); }, 800);
+                    })
+                    .catch(function() {
+                        errorBox.textContent = 'Network error — please try again.';
+                        errorBox.style.display = 'block';
                     });
-                })();
-            })
-            .catch(function(e) {
-                statusEl.textContent = e.name === 'NotAllowedError'
-                    ? 'Camera permission denied — allow it in browser settings.'
-                    : 'Could not open camera: ' + e.message;
-            });
+            },
+            function(msg) { statusEl.textContent = msg; }
+        );
+        scanner.start();
     }
 
     scanBtn.addEventListener('click', openScanner);
