@@ -145,7 +145,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 <?php endif; ?>
             </div>
         <?php else: ?>
-        <table class="table">
+        <div class="table-wrap"><table class="table">
             <thead>
                 <tr>
                     <th style="width:48px"></th>
@@ -213,7 +213,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 </tr>
             <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
 
         <?php
         $base = '/items?' . http_build_query(array_filter(['search' => $search, 'category' => $category_id ?: null]));

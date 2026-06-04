@@ -50,7 +50,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 <p>No active loans. <a href="/loans/checkout">Check something out</a>.</p>
             </div>
         <?php else: ?>
-        <table class="table">
+        <div class="table-wrap"><table class="table">
             <thead>
                 <tr>
                     <th>Item</th>
@@ -108,7 +108,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 </tr>
             <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
         <?php endif; ?>
     </div>
 </main>

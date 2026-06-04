@@ -47,7 +47,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 <p>No completed loans yet. Items you return will appear here.</p>
             </div>
         <?php else: ?>
-        <table class="table">
+        <div class="table-wrap"><table class="table">
             <thead>
                 <tr>
                     <th>Item</th>
@@ -86,7 +86,7 @@ require __DIR__ . '/../templates/sidebar.php';
                 </tr>
             <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
         <?= pagination_html($pag, '/history') ?>
         <?php endif; ?>
     </div>
