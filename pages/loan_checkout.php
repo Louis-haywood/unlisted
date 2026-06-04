@@ -462,7 +462,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="express-scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Item Barcode</h3>
-        <div id="express-scanner-reader" style="width:100%; border-radius:8px; overflow:hidden"></div>
+        <video id="express-scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
         <p id="express-scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at item barcode...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="express-scanner-cancel">Cancel</button>
@@ -470,77 +470,97 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// Express checkout scanner
 (function() {
-    var scanBtn    = document.getElementById('express-scan-btn');
-    var rescanBtn  = document.getElementById('express-rescan');
-    var cancelBtn  = document.getElementById('express-scanner-cancel');
-    var modal      = document.getElementById('express-scanner-modal');
-    var statusEl   = document.getElementById('express-scanner-status');
-    var resultBox  = document.getElementById('express-result');
-    var errorBox   = document.getElementById('express-error');
-    var itemName   = document.getElementById('express-item-name');
-    var itemStock  = document.getElementById('express-item-stock');
-    var itemIdIn   = document.getElementById('express-item-id');
-    var form       = document.getElementById('express-form');
+    var scanBtn   = document.getElementById('express-scan-btn');
+    var rescanBtn = document.getElementById('express-rescan');
+    var cancelBtn = document.getElementById('express-scanner-cancel');
+    var modal     = document.getElementById('express-scanner-modal');
+    var statusEl  = document.getElementById('express-scanner-status');
+    var videoEl   = document.getElementById('express-scanner-video');
+    var resultBox = document.getElementById('express-result');
+    var errorBox  = document.getElementById('express-error');
+    var itemName  = document.getElementById('express-item-name');
+    var itemStock = document.getElementById('express-item-stock');
+    var itemIdIn  = document.getElementById('express-item-id');
+    var form      = document.getElementById('express-form');
     if (!scanBtn) return;
 
-    var scanner = null;
+    var stopScan = null;
 
     function closeScanner() {
-        if (scanner) {
-            scanner.stop().catch(function() {}).then(function() {
-                scanner.clear();
-                scanner = null;
-            });
-        }
+        if (stopScan) { stopScan(); stopScan = null; }
         modal.style.display = 'none';
+        videoEl.srcObject = null;
         statusEl.textContent = 'Point camera at item barcode...';
     }
 
     function openScanner() {
         errorBox.style.display = 'none';
         resultBox.style.display = 'none';
+
+        if (!navigator.mediaDevices) {
+            statusEl.textContent = 'Camera requires HTTPS.';
+            modal.style.display = 'flex';
+            return;
+        }
+        if (!('BarcodeDetector' in window)) {
+            statusEl.textContent = 'Barcode detection not supported in this browser. Try Chrome on Android.';
+            modal.style.display = 'flex';
+            return;
+        }
+
         modal.style.display = 'flex';
-        scanner = new Html5Qrcode('express-scanner-reader');
-        scanner.start(
-            { facingMode: 'environment' },
-            { fps: 10, qrbox: { width: 280, height: 120 } },
-            function(barcode) {
-                closeScanner();
-                fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (data.error) {
-                            errorBox.textContent = data.error;
-                            errorBox.style.display = 'block';
-                            return;
+        var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf'] });
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                videoEl.srcObject = stream;
+                videoEl.play();
+                var active = true;
+                stopScan = function() { active = false; stream.getTracks().forEach(function(t){ t.stop(); }); };
+                (function scan() {
+                    if (!active) return;
+                    detector.detect(videoEl).then(function(results) {
+                        if (!active) return;
+                        if (results.length) {
+                            var barcode = results[0].rawValue;
+                            closeScanner();
+                            fetch('/loans/checkout?action=barcode_lookup&barcode=' + encodeURIComponent(barcode))
+                                .then(function(r) { return r.json(); })
+                                .then(function(data) {
+                                    if (data.error) {
+                                        errorBox.textContent = data.error;
+                                        errorBox.style.display = 'block';
+                                        return;
+                                    }
+                                    itemIdIn.value = data.id;
+                                    itemName.textContent = data.name;
+                                    itemStock.textContent = data.quantity + ' in stock';
+                                    resultBox.style.display = 'block';
+                                    setTimeout(function() { form.submit(); }, 800);
+                                })
+                                .catch(function() {
+                                    errorBox.textContent = 'Network error — please try again.';
+                                    errorBox.style.display = 'block';
+                                });
+                        } else {
+                            requestAnimationFrame(scan);
                         }
-                        itemIdIn.value = data.id;
-                        itemName.textContent = data.name;
-                        itemStock.textContent = data.quantity + ' in stock';
-                        resultBox.style.display = 'block';
-                        setTimeout(function() { form.submit(); }, 800);
-                    })
-                    .catch(function() {
-                        errorBox.textContent = 'Network error — please try again.';
-                        errorBox.style.display = 'block';
-                    });
-            },
-            function() {}
-        ).catch(function(e) {
-            statusEl.textContent = e.toString().includes('NotAllowed')
-                ? 'Camera permission denied — allow it in browser settings.'
-                : 'Camera error: ' + e;
-        });
+                    }).catch(function() { if (active) requestAnimationFrame(scan); });
+                })();
+            })
+            .catch(function(e) {
+                statusEl.textContent = e.name === 'NotAllowedError'
+                    ? 'Camera permission denied — allow it in browser settings.'
+                    : 'Could not open camera: ' + e.message;
+            });
     }
 
     scanBtn.addEventListener('click', openScanner);
     if (rescanBtn) rescanBtn.addEventListener('click', openScanner);
     cancelBtn.addEventListener('click', closeScanner);
 })();
+</script>
 
 // Barcode scanner detection on step 1 search field
 (function() {

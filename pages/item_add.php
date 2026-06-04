@@ -208,7 +208,7 @@ require __DIR__ . '/../templates/sidebar.php';
 <div id="scanner-modal" class="modal-overlay" style="display:none">
     <div class="modal-box" style="max-width:380px; width:100%">
         <h3 class="modal-title">Scan Barcode</h3>
-        <div id="scanner-reader" style="width:100%; border-radius:8px; overflow:hidden"></div>
+        <video id="scanner-video" style="width:100%; border-radius:8px; background:#000; display:block" autoplay playsinline muted></video>
         <p id="scanner-status" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:#6B7280">Point camera at barcode...</p>
         <div class="modal-actions">
             <button class="btn btn-secondary" id="scanner-cancel">Cancel</button>
@@ -216,47 +216,66 @@ require __DIR__ . '/../templates/sidebar.php';
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-// Barcode scanner
 (function() {
-    var scanBtn    = document.getElementById('scan-barcode');
-    var scanModal  = document.getElementById('scanner-modal');
-    var cancelBtn  = document.getElementById('scanner-cancel');
-    var statusEl   = document.getElementById('scanner-status');
-    var scanner    = null;
+    var scanBtn   = document.getElementById('scan-barcode');
+    var scanModal = document.getElementById('scanner-modal');
+    var cancelBtn = document.getElementById('scanner-cancel');
+    var statusEl  = document.getElementById('scanner-status');
+    var videoEl   = document.getElementById('scanner-video');
+    var stopScan  = null;
 
     function closeScanner() {
-        if (scanner) {
-            scanner.stop().catch(function() {}).then(function() {
-                scanner.clear();
-                scanner = null;
-            });
-        }
+        if (stopScan) { stopScan(); stopScan = null; }
         scanModal.style.display = 'none';
+        videoEl.srcObject = null;
         statusEl.textContent = 'Point camera at barcode...';
     }
 
     scanBtn.addEventListener('click', function() {
+        if (!navigator.mediaDevices) {
+            statusEl.textContent = 'Camera requires HTTPS.';
+            scanModal.style.display = 'flex';
+            return;
+        }
+        if (!('BarcodeDetector' in window)) {
+            statusEl.textContent = 'Barcode detection not supported in this browser. Try Chrome on Android.';
+            scanModal.style.display = 'flex';
+            return;
+        }
         scanModal.style.display = 'flex';
-        scanner = new Html5Qrcode('scanner-reader');
-        scanner.start(
-            { facingMode: 'environment' },
-            { fps: 10, qrbox: { width: 280, height: 120 } },
-            function(barcode) {
-                document.getElementById('barcode').value = barcode;
-                closeScanner();
-            },
-            function() {}
-        ).catch(function(e) {
-            statusEl.textContent = e.toString().includes('NotAllowed')
-                ? 'Camera permission denied — allow it in browser settings.'
-                : 'Camera error: ' + e;
-        });
+        var detector = new BarcodeDetector({ formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf'] });
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                videoEl.srcObject = stream;
+                videoEl.play();
+                var active = true;
+                stopScan = function() { active = false; stream.getTracks().forEach(function(t){ t.stop(); }); };
+                (function scan() {
+                    if (!active) return;
+                    detector.detect(videoEl).then(function(results) {
+                        if (results.length) {
+                            document.getElementById('barcode').value = results[0].rawValue;
+                            closeScanner();
+                        } else {
+                            requestAnimationFrame(scan);
+                        }
+                    }).catch(function() { if (active) requestAnimationFrame(scan); });
+                })();
+            })
+            .catch(function(e) {
+                statusEl.textContent = e.name === 'NotAllowedError'
+                    ? 'Camera permission denied — allow it in browser settings.'
+                    : 'Could not open camera: ' + e.message;
+            });
     });
 
     cancelBtn.addEventListener('click', closeScanner);
 })();
+</script>
+
+<script>
+// Barcode generate
 
 // Barcode generate
 document.getElementById('gen-barcode').addEventListener('click', function() {
